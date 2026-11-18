@@ -3,7 +3,8 @@ from pymongo import MongoClient
 
 client = MongoClient(
     settings.MONGODB_URI,
-    serverSelectionTimeoutMS=5000
+    serverSelectionTimeoutMS=5000,
+    tz_aware=True
 )
 
 db = client[settings.MONGODB_DATABASE]

@@ -1,0 +1,93 @@
+<div class="page-heading">
+  <div>
+    <span class="section-kicker">WORKSPACE OVERVIEW</span>
+    <h1>Support at a glance<span>.</span></h1>
+    <p>See what needs attention and keep every issue moving forward.</p>
+  </div>
+  <a class="button button-primary" routerLink="/tickets/new"><svg lucidePlus></svg> Create a ticket</a>
+</div>
+
+@if (error()) {
+  <div class="alert alert-error" role="alert">
+    <span>{{ error() }}</span>
+    <button type="button" (click)="refresh()">Try again</button>
+  </div>
+}
+
+<div class="metric-grid">
+  <article class="metric-card metric-total">
+    <div class="metric-top"><span>Total tickets</span><span class="metric-icon"><svg lucideTicket></svg></span></div>
+    <strong>{{ loading() ? '—' : total() }}</strong>
+    <small>Across your workspace</small>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Open</span><span class="metric-icon icon-open"><svg lucideClock3></svg></span></div>
+    <strong>{{ loading() ? '—' : openCount() }}</strong>
+    <small>Waiting for attention</small>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>In progress</span><span class="metric-icon icon-progress"><svg lucideArrowRight></svg></span></div>
+    <strong>{{ loading() ? '—' : progressCount() }}</strong>
+    <small>Currently being worked on</small>
+  </article>
+  <article class="metric-card">
+    <div class="metric-top"><span>Resolved</span><span class="metric-icon icon-resolved"><svg lucideCircleCheck></svg></span></div>
+    <strong>{{ loading() ? '—' : resolvedCount() }}</strong>
+    <small>Successfully closed out</small>
+  </article>
+</div>
+
+<div class="dashboard-grid">
+  <section class="panel activity-panel">
+    <div class="panel-heading">
+      <div><span class="section-kicker">LATEST ACTIVITY</span><h2>Recent tickets</h2></div>
+      <a routerLink="/tickets" class="text-link">View all <svg lucideArrowRight></svg></a>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-list"><div></div><div></div><div></div><div></div></div>
+    } @else if (recentTickets().length) {
+      <div class="recent-list">
+        @for (ticket of recentTickets(); track ticket.id) {
+          <a class="recent-item" [routerLink]="['/tickets', ticket.id]">
+            <span class="ticket-symbol">{{ ticket.category === 'Billing' ? '$' : ticket.category === 'Account' ? 'A' : ticket.category === 'Technical' ? 'T' : 'G' }}</span>
+            <span class="recent-copy"><strong>{{ ticket.title }}</strong><small>{{ ticket.category }} <i>·</i> {{ ticket.created_at | date:'MMM d, y' }}</small></span>
+            <span class="status-pill" [class]="statusClass(ticket.status)">{{ ticket.status }}</span>
+            <svg class="recent-arrow" lucideArrowRight></svg>
+          </a>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <div class="empty-icon"><svg lucideTicket></svg></div>
+        <strong>Your workspace is ready</strong>
+        <p>When tickets are created, your latest activity will appear here.</p>
+        <a routerLink="/tickets/new" class="text-link">Create the first ticket <svg lucideArrowRight></svg></a>
+      </div>
+    }
+  </section>
+
+  <section class="panel status-panel">
+    <div class="panel-heading">
+      <div><span class="section-kicker">TICKET HEALTH</span><h2>Status breakdown</h2></div>
+    </div>
+    <div class="status-total"><strong>{{ loading() ? '—' : total() }}</strong><span>total tickets</span></div>
+    <div class="status-stack" aria-label="Ticket status distribution">
+      <span class="stack-open" [style.width.%]="share('Open')"></span>
+      <span class="stack-progress" [style.width.%]="share('In Progress')"></span>
+      <span class="stack-resolved" [style.width.%]="share('Resolved')"></span>
+    </div>
+    <div class="status-legend">
+      <div><span class="legend-dot dot-open"></span><span>Open</span><strong>{{ loading() ? '—' : openCount() }}</strong></div>
+      <div><span class="legend-dot dot-progress"></span><span>In progress</span><strong>{{ loading() ? '—' : progressCount() }}</strong></div>
+      <div><span class="legend-dot dot-resolved"></span><span>Resolved</span><strong>{{ loading() ? '—' : resolvedCount() }}</strong></div>
+    </div>
+    <div class="status-note"><span class="note-check"><svg lucideCircleCheck></svg></span><p>Every resolved ticket becomes part of your team's searchable support history.</p></div>
+  </section>
+</div>
+
+<section class="bottom-callout">
+  <div class="callout-art"><span></span><span></span><span></span><svg lucideTicket></svg></div>
+  <div><strong>Turn repeat issues into faster resolutions.</strong><p>ResolveDesk can surface similar resolved tickets while someone describes a new issue.</p></div>
+  <a routerLink="/tickets/new" class="button button-soft">Try AI suggestions <svg lucideArrowRight></svg></a>
+</section>

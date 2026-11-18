@@ -38,6 +38,7 @@ export class TicketDetailPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
 
   readonly demoMode = inject(DemoModeService);
+  readonly routeQuery = this.route.snapshot.queryParams;
   readonly statuses = TICKET_STATUSES;
   readonly ticket = signal<Ticket | null>(null);
   readonly loading = signal(true);

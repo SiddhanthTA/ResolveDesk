@@ -15,7 +15,7 @@ export class App {
   {title:'Create a support request',description:'Use this form to describe the issue and choose the category that best fits. Clear details make it easier for the team to investigate.',path:'/tickets/new',selector:'[data-tour="create-form"]',target:'New ticket form'},
   {title:'AI finds related cases',description:'As you type, ResolveDesk compares your issue with previously resolved tickets. These are useful references, not guaranteed answers.',path:'/tickets/new',selector:'[data-tour="ai-panel"]',target:'AI similar-ticket suggestions'},
   {title:'Find and filter tickets',description:'Search the list and narrow it by status or category. Your selected filters remain in the URL so you can return to the same view.',path:'/tickets',selector:'[data-tour="ticket-filters"]',target:'Search and filters'},
-  {title:'Open a ticket',description:'Select a ticket to read the full description, review its status and see the support team's resolution note.',path:'/tickets',selector:'[data-tour="ticket-row"]',target:'Ticket list'}
+  {title:'Open a ticket',description:"Select a ticket to read the full description, review its status and see the support team's resolution note.",path:'/tickets',selector:'[data-tour="ticket-row"]',target:'Ticket list'}
  ];
  switchRole(role:'user'|'agent'):void{this.demoMode.setRole(role);this.closeTour();void this.router.navigate(['/dashboard']);}
  startTour():void{if(this.demoMode.role()!=='user')return;this.tourStep.set(0);this.tourOpen.set(true);void this.showTourStep(0);}

@@ -46,9 +46,7 @@
         <strong>ResolveDesk demo</strong>
         <span>Local workspace</span>
       </div>
-      <button class="icon-button" type="button" aria-label="Workspace settings" title="Workspace settings">
-        <svg lucideSettings></svg>
-      </button>
+      <span class="local-badge">LOCAL</span>
     </div>
   </aside>
 
@@ -64,9 +62,6 @@
           <button type="button" [class.selected]="demoMode.role() === 'user'" (click)="demoMode.setRole('user')">End user</button>
           <button type="button" [class.selected]="demoMode.role() === 'agent'" (click)="demoMode.setRole('agent')">Agent</button>
         </div>
-        <button class="icon-button notification-button" type="button" aria-label="Notifications">
-          <svg lucideBell></svg><span></span>
-        </button>
         <div class="topbar-avatar">{{ demoMode.role() === 'agent' ? 'SA' : 'EU' }}</div>
       </div>
     </header>
@@ -76,7 +71,7 @@
     </section>
     <footer class="app-footer">
       <span>© 2026 ResolveDesk</span>
-      <span><i></i> All systems operational</span>
+      <span><i></i> Local demo environment</span>
     </footer>
   </main>
 </div>

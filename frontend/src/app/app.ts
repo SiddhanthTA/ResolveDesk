@@ -1,23 +1,35 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { LucideCircleHelp, LucideLayoutDashboard, LucidePlus, LucideTicket } from '@lucide/angular';
+import { LucideLayoutDashboard, LucidePlus, LucideTicket } from '@lucide/angular';
 import { DemoModeService } from './core/services/demo-mode.service';
 
-@Component({selector:'app-root',standalone:true,imports:[RouterOutlet,RouterLink,RouterLinkActive,LucideLayoutDashboard,LucideTicket,LucidePlus,LucideCircleHelp],templateUrl:'./app.html',styleUrl:'./app.css'})
+type TourStep={title:string;description:string;path:string;selector:string;target:string};
+@Component({selector:'app-root',standalone:true,imports:[RouterOutlet,RouterLink,RouterLinkActive,LucideLayoutDashboard,LucideTicket,LucidePlus],templateUrl:'./app.html',styleUrl:'./app.css'})
 export class App {
-  readonly demoMode=inject(DemoModeService);
-  readonly tourOpen=signal(false);
-  readonly tourStep=signal(0);
-  readonly tourSteps=[
-    {title:'Your workspace overview',description:'A role-aware home base. End users can track their requests; agents get a live view of the work waiting in the queue.',target:'Overview · sidebar navigation'},
-    {title:'Create a support request',description:'End users describe the issue, choose a category and submit it. Agents focus on reviewing and resolving requests rather than creating their own.',target:'Create ticket · end-user navigation'},
-    {title:'AI-powered similar cases',description:'While an end user writes a request, ResolveDesk compares its wording with resolved tickets and surfaces up to three potentially useful matches. These are suggestions, not guaranteed answers.',target:'AI suggestions · new ticket form'},
-    {title:'Your ticket list',description:'Search by issue details and narrow the list by status or category. Agents land on Open tickets first, but can switch to any status or the full queue.',target:'My tickets / Work queue · sidebar navigation'},
-    {title:'Ticket details and resolution',description:'Open a ticket to read its full context. Agents can move it through Open, In Progress and Resolved, adding a resolution note when closing it.',target:'Ticket details · select any row'}
-  ];
-  switchRole(role:'user'|'agent'):void{this.demoMode.setRole(role);if(this.router.url.startsWith('/tickets/new')&&role==='agent')void this.router.navigate(['/dashboard']);}
-  private readonly router=inject(Router);
-  startTour():void{this.tourStep.set(0);this.tourOpen.set(true);}
-  closeTour():void{this.tourOpen.set(false);}
-  nextTourStep():void{if(this.tourStep()===this.tourSteps.length-1){this.closeTour();return;}this.tourStep.update(s=>s+1);}
+ readonly demoMode=inject(DemoModeService);private readonly router=inject(Router);
+ readonly tourOpen=signal(false);readonly tourStep=signal(0);
+ readonly spotlight=signal({left:0,top:0,width:0,height:0});
+ readonly tooltip=signal({left:0,top:0});
+ readonly tourSteps:TourStep[]=[
+  {title:'Your workspace overview',description:'This is your starting point. The overview gives you a quick read on ticket activity and what needs attention.',path:'/dashboard',selector:'[data-tour="overview"]',target:'Workspace overview'},
+  {title:'Create a support request',description:'Use this form to describe the issue and choose the category that best fits. Clear details make it easier for the team to investigate.',path:'/tickets/new',selector:'[data-tour="create-form"]',target:'New ticket form'},
+  {title:'AI finds related cases',description:'As you type, ResolveDesk compares your issue with previously resolved tickets. These are useful references, not guaranteed answers.',path:'/tickets/new',selector:'[data-tour="ai-panel"]',target:'AI similar-ticket suggestions'},
+  {title:'Find and filter tickets',description:'Search the list and narrow it by status or category. Your selected filters remain in the URL so you can return to the same view.',path:'/tickets',selector:'[data-tour="ticket-filters"]',target:'Search and filters'},
+  {title:'Open a ticket',description:'Select a ticket to read the full description, review its status and see the support team's resolution note.',path:'/tickets',selector:'[data-tour="ticket-row"]',target:'Ticket list'}
+ ];
+ switchRole(role:'user'|'agent'):void{this.demoMode.setRole(role);if(this.router.url.startsWith('/tickets/new')&&role==='agent')void this.router.navigate(['/dashboard']);if(role==='agent')this.closeTour();}
+ startTour():void{if(this.demoMode.role()!=='user')return;this.tourStep.set(0);this.tourOpen.set(true);void this.showTourStep(0);}
+ closeTour():void{this.tourOpen.set(false);}
+ nextTourStep():void{const next=this.tourStep()+1;if(next>=this.tourSteps.length){this.closeTour();return;}this.tourStep.set(next);void this.showTourStep(next);}
+ private async showTourStep(index:number):Promise<void>{
+  const step=this.tourSteps[index];await this.router.navigateByUrl(step.path);
+  window.setTimeout(()=>{const el=document.querySelector(step.selector) as HTMLElement|null;if(!el){this.closeTour();return;}el.scrollIntoView({behavior:'smooth',block:'center'});window.setTimeout(()=>this.positionTourTarget(el),180);},120);
+ }
+ private positionTourTarget(el:HTMLElement):void{
+  const r=el.getBoundingClientRect(),pad=8;const left=Math.max(8,r.left-pad),top=Math.max(8,r.top-pad),width=Math.min(window.innerWidth-left,r.width+pad*2),height=Math.min(window.innerHeight-top,r.height+pad*2);
+  this.spotlight.set({left,top,width,height});
+  const cardWidth=Math.min(360,window.innerWidth-32);const tooltipLeft=Math.min(Math.max(16,r.left),window.innerWidth-cardWidth-16);
+  const below=r.bottom+24+210<window.innerHeight;const tooltipTop=below?Math.min(window.innerHeight-220,r.bottom+24):Math.max(16,r.top-230);
+  this.tooltip.set({left:tooltipLeft,top:tooltipTop});
+ }
 }

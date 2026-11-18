@@ -31,3 +31,18 @@ select option{background:#171e2e;color:#edf0fa}
 .search-field input{font-size:11px!important;color:#edf0fa!important}
 .search-field input::placeholder{color:#74819a!important}
 .form-field select,.agent-card select{min-height:42px;border-radius:10px!important;padding-left:12px!important;background-color:#0d1320!important}
+
+.form-field select,.agent-card select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a99cff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;background-position:right 12px center!important;background-repeat:no-repeat!important;background-size:14px!important}
+.list-toolbar{background:#131b2a!important;border-color:#293247!important}
+.tickets-panel{background:#111827!important;border-color:#293247!important}
+.ticket-table th{background:#182131!important;color:#8290a9!important}
+.ticket-table td{border-color:#273146!important}
+.ticket-cell small{color:#8491a9!important}
+.ticket-cell strong{color:#e8ebf5!important}
+.category-label,.date-cell{color:#9ba7bd!important}
+.ticket-mini-icon{background:#25213d!important;border-color:#3a3556!important;color:#b7aaff!important}
+.row-open{color:#8995ad!important}
+.row-open:hover{background:#2a2545!important;color:#c8bfff!important}
+.list-title-icon{background:#292449!important;color:#b7aaff!important}
+.list-title strong{color:#edf0fa!important}
+.list-title span{color:#8794ad!important}

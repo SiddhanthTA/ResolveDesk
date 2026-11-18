@@ -1,3 +1,35 @@
-/* You can add global styles to this file, and also import other style files */
-
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
 @import 'tailwindcss';
+
+@theme {
+  --font-sans: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #f4f2ff;
+  --color-brand-100: #ece9ff;
+  --color-brand-500: #7568dd;
+  --color-brand-600: #6658d5;
+  --color-brand-700: #5548bd;
+}
+
+:root {
+  font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+  color: #34354a;
+  background: #f7f8fb;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-optical-sizing: auto;
+}
+
+* { box-sizing: border-box; }
+html { min-width: 320px; min-height: 100%; background: #f7f8fb; }
+body { min-width: 320px; min-height: 100vh; margin: 0; }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid #a69df0;
+  outline-offset: 2px;
+}
+::selection { background: #e7e3ff; color: #433a9d; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-thumb { background: #d8d8e2; border: 2px solid #f7f8fb; border-radius: 99px; }
+::-webkit-scrollbar-track { background: #f7f8fb; }

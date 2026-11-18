@@ -23,7 +23,7 @@ export class App {
  nextTourStep():void{const next=this.tourStep()+1;if(next>=this.tourSteps.length){this.closeTour();return;}this.tourStep.set(next);void this.showTourStep(next);}
  private async showTourStep(index:number):Promise<void>{
   const step=this.tourSteps[index];await this.router.navigateByUrl(step.path);
-  window.setTimeout(()=>{const el=document.querySelector(step.selector) as HTMLElement|null;if(!el){this.closeTour();return;}el.scrollIntoView({behavior:'smooth',block:'center'});window.setTimeout(()=>this.positionTourTarget(el),180);},120);
+  window.setTimeout(()=>{const el=(document.querySelector(step.selector) ?? (step.selector==='[data-tour="ticket-row"]'?document.querySelector('[data-tour="ticket-filters"]'):null)) as HTMLElement|null;if(!el){this.closeTour();return;}el.scrollIntoView({behavior:'smooth',block:'center'});window.setTimeout(()=>this.positionTourTarget(el),180);},120);
  }
  private positionTourTarget(el:HTMLElement):void{
   const r=el.getBoundingClientRect(),pad=8;const left=Math.max(8,r.left-pad),top=Math.max(8,r.top-pad),width=Math.min(window.innerWidth-left,r.width+pad*2),height=Math.min(window.innerHeight-top,r.height+pad*2);

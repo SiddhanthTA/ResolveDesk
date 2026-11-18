@@ -11,7 +11,11 @@ from .serializers import (
     TicketListResponseSerializer,
     TicketResponseSerializer,
     TicketUpdateSerializer,
+    SimilarTicketRequestSerializer,
+    SimilarTicketResponseSerializer,
 )
+
+from .services.similarity_service import find_similar_resolved_tickets
 
 
 class HealthCheckView(APIView):
@@ -162,5 +166,35 @@ class TicketDetailView(APIView):
         except Exception:
             return Response(
                 {"detail": "Unable to update the ticket right now."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+
+class SimilarTicketSuggestionsView(APIView):
+    @extend_schema(
+        summary="Suggest similar resolved tickets",
+        description=(
+            "Uses a locally running Sentence Transformers model to rank up to "
+            "three resolved tickets by cosine similarity. Scores are similarity "
+            "measures, not probabilities or guarantees."
+        ),
+        request=SimilarTicketRequestSerializer,
+        responses={200: SimilarTicketResponseSerializer(many=True), 400: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
+    )
+    def post(self, request):
+        serializer = SimilarTicketRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            suggestions = find_similar_resolved_tickets(
+                title=serializer.validated_data["title"],
+                description=serializer.validated_data["description"],
+                limit=3,
+            )
+            return Response(suggestions)
+        except Exception:
+            return Response(
+                {"detail": "Unable to generate similar-ticket suggestions right now."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )

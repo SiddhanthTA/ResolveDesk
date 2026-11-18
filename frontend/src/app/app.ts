@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import {
-  LucideBell,
   LucideCircleHelp,
   LucideLayoutDashboard,
   LucidePlus,
@@ -20,7 +19,6 @@ import { DemoModeService } from './core/services/demo-mode.service';
     LucideLayoutDashboard,
     LucideTicket,
     LucidePlus,
-    LucideBell,
     LucideCircleHelp,
     LucideSettings,
   ],

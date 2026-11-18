@@ -4,7 +4,6 @@ import {
   LucideCircleHelp,
   LucideLayoutDashboard,
   LucidePlus,
-  LucideSettings,
   LucideTicket,
 } from '@lucide/angular';
 import { DemoModeService } from './core/services/demo-mode.service';
@@ -20,7 +19,6 @@ import { DemoModeService } from './core/services/demo-mode.service';
     LucideTicket,
     LucidePlus,
     LucideCircleHelp,
-    LucideSettings,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',

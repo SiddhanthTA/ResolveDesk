@@ -1,12 +1,36 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import {
+  LucideBell,
+  LucideCircleHelp,
+  LucideLayoutDashboard,
+  LucidePlus,
+  LucideSettings,
+  LucideTicket,
+} from '@lucide/angular';
+import { DemoModeService } from './core/services/demo-mode.service';
 
 @Component({
-  imports: [RouterOutlet],
   selector: 'app-root',
-  styleUrl: './app.css',
+  standalone: true,
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    LucideLayoutDashboard,
+    LucideTicket,
+    LucidePlus,
+    LucideBell,
+    LucideCircleHelp,
+    LucideSettings,
+  ],
   templateUrl: './app.html',
+  styleUrl: './app.css',
 })
 export class App {
-  protected readonly title = signal('frontend');
+  readonly demoMode = inject(DemoModeService);
+
+  toggleRole(): void {
+    this.demoMode.toggleRole();
+  }
 }

@@ -49,3 +49,20 @@ class TicketUpdateSerializer(serializers.Serializer):
             })
 
         return attrs
+
+
+
+class TicketResponseSerializer(serializers.Serializer):
+    id = serializers.CharField()
+    title = serializers.CharField()
+    description = serializers.CharField()
+    category = serializers.CharField()
+    status = serializers.CharField()
+    resolution_note = serializers.CharField(allow_null=True, allow_blank=True)
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+
+
+class TicketListResponseSerializer(serializers.Serializer):
+    count = serializers.IntegerField()
+    results = TicketResponseSerializer(many=True)

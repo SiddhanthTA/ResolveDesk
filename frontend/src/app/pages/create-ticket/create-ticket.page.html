@@ -1,0 +1,93 @@
+<div class="form-page-heading">
+  <a class="back-link" routerLink="/tickets"><svg lucideArrowLeft></svg> Back to tickets</a>
+  <span class="section-kicker">NEW SUPPORT REQUEST</span>
+  <h1>Let's get this sorted<span>.</span></h1>
+  <p>Tell us what's happening. We'll help you find the right path forward.</p>
+</div>
+
+<div class="create-layout">
+  <section class="form-card">
+    <div class="card-heading">
+      <div class="card-heading-icon"><svg lucideSend></svg></div>
+      <div><h2>Issue details</h2><p>Fields marked with <span>*</span> are required.</p></div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="form-field">
+        <div class="label-row"><label for="ticket-title">What's the issue? <span>*</span></label><small>{{ form.controls.title.value.length }}/150</small></div>
+        <input id="ticket-title" type="text" formControlName="title" maxlength="150" placeholder="e.g. Unable to access my account" autocomplete="off" [class.invalid]="showError('title')" [attr.aria-invalid]="showError('title')">
+        @if (showError('title')) { <small class="field-error">{{ fieldError('title') }}</small> }
+        @else { <small class="field-hint">A short, specific summary helps us find similar issues.</small> }
+      </div>
+
+      <div class="form-field">
+        <div class="label-row"><label for="ticket-description">Describe what's happening <span>*</span></label><small>{{ form.controls.description.value.length }}/5,000</small></div>
+        <textarea id="ticket-description" formControlName="description" rows="7" maxlength="5000" placeholder="Tell us what you were trying to do, what happened instead, and any steps you've already tried..." [class.invalid]="showError('description')" [attr.aria-invalid]="showError('description')"></textarea>
+        @if (showError('description')) { <small class="field-error">{{ fieldError('description') }}</small> }
+        @else { <small class="field-hint">Include any error messages or steps that help explain the issue.</small> }
+      </div>
+
+      <div class="form-field category-field">
+        <label for="ticket-category">Category <span>*</span></label>
+        <select id="ticket-category" formControlName="category">
+          @for (category of categories; track category) { <option [value]="category">{{ category }}</option> }
+        </select>
+        <small class="field-hint">Choose the area that best describes the issue.</small>
+      </div>
+
+      @if (submitError()) {
+        <div class="submit-error" role="alert"><svg lucideInfo></svg>{{ submitError() }}</div>
+      }
+
+      <div class="form-actions">
+        <a routerLink="/tickets" class="cancel-link">Cancel</a>
+        <button class="button button-primary submit-button" type="submit" [disabled]="submitting()">
+          @if (submitting()) { <svg class="spin" lucideLoaderCircle></svg> Submitting... }
+          @else { Submit ticket <svg lucideArrowRight></svg> }
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <aside class="suggestions-column">
+    <section class="ai-panel">
+      <div class="ai-panel-heading">
+        <div class="ai-icon"><svg lucideSparkles></svg></div>
+        <div><span>RESOLVED TICKET MATCH</span><h2>Check if it's been solved before</h2></div>
+        <span class="ai-live"><i></i> AI</span>
+      </div>
+      <p class="ai-intro">As you describe the issue, we'll look for similar resolved tickets that may already have an answer.</p>
+
+      @if (suggestionState() === 'idle') {
+        <div class="suggestion-placeholder">
+          <div class="placeholder-orbit"><svg lucideWandSparkles></svg></div>
+          <strong>Your suggestions will appear here</strong>
+          <p>Enter a title and a few details. We'll search after you pause typing.</p>
+        </div>
+      } @else if (suggestionState() === 'loading') {
+        <div class="suggestion-loading"><span></span><span></span><span></span><p>Looking through resolved tickets...</p></div>
+      } @else if (suggestionState() === 'error') {
+        <div class="suggestion-message"><div class="message-icon"><svg lucideInfo></svg></div><strong>Suggestions are temporarily unavailable</strong><p>You can still submit your ticket. The support team can continue from there.</p></div>
+      } @else if (suggestions().length === 0) {
+        <div class="suggestion-message"><div class="message-icon"><svg lucideCheck></svg></div><strong>No close matches found</strong><p>We couldn't find a closely related resolved ticket. Go ahead and submit your request.</p></div>
+      } @else {
+        <div class="suggestion-results">
+          <div class="results-heading"><strong>{{ suggestions().length }} potentially helpful {{ suggestions().length === 1 ? 'match' : 'matches' }}</strong><span>Ranked by similarity</span></div>
+          @for (ticket of suggestions(); track ticket.id) {
+            <article class="suggestion-card">
+              <div class="suggestion-meta"><span class="resolved-tag"><i></i> RESOLVED</span><span>{{ ticket.category }}</span></div>
+              <h3>{{ ticket.title }}</h3>
+              <p class="suggestion-description">{{ ticket.description }}</p>
+              @if (ticket.resolution_note) {
+                <div class="resolution-preview"><span>PREVIOUS RESOLUTION</span><p>{{ ticket.resolution_note }}</p></div>
+              }
+              <a [routerLink]="['/tickets', ticket.id]" class="suggestion-link">View ticket details <svg lucideArrowRight></svg></a>
+            </article>
+          }
+          <small class="ai-disclaimer">Suggestions are based on text similarity and are not guaranteed solutions. You can still submit a new ticket.</small>
+        </div>
+      }
+    </section>
+    <div class="privacy-note"><svg lucideInfo></svg><p><strong>You're in control.</strong> Suggestions are only references. Submitting a ticket is always your choice.</p></div>
+  </aside>
+</div>

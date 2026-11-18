@@ -1,4 +1,4 @@
-<a class="back-link" routerLink="/tickets"><svg lucideArrowLeft></svg> Back to all tickets</a>
+<a class="back-link" routerLink="/tickets" [queryParams]="routeQuery"><svg lucideArrowLeft></svg> Back to all tickets</a>
 
 @if (loading()) {
   <div class="detail-loading"><span></span><span></span><span></span></div>

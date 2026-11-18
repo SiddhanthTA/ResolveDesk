@@ -1,4 +1,4 @@
-<div class="page-heading">
+<div class="page-heading" data-tour="dashboard-heading">
  <div><span class="section-kicker">{{demoMode.role()==='agent'?'AGENT COMMAND':'YOUR SUPPORT SPACE'}}</span><h1>{{demoMode.role()==='agent'?'The queue, at a glance':'Support without the guesswork'}}<span>.</span></h1><p>{{demoMode.role()==='agent'?'Prioritise incoming issues and keep every request moving.':'Keep track of your requests and find the help you need.'}}</p></div>
  @if(demoMode.role()==='user'){<a class="button button-primary" routerLink="/tickets/new"><svg lucidePlus></svg> Create a ticket</a>}
 </div>

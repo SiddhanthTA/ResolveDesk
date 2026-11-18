@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LucideArrowLeft, LucideCalendarDays, LucideCheck, LucideCircleAlert, LucideClock3, LucideFileText, LucideLoaderCircle, LucideShieldCheck, LucideTag } from '@lucide/angular';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { TICKET_STATUSES, Ticket, TicketStatus, UpdateTicketRequest } from '../../core/models/ticket.model';
@@ -32,6 +32,7 @@ import { TicketService } from '../../core/services/ticket.service';
 })
 export class TicketDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly ticketService = inject(TicketService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
@@ -111,6 +112,7 @@ export class TicketDetailPage implements OnInit {
         this.agentForm.markAsPristine();
         this.saving.set(false);
         this.saved.set(true);
+        void this.router.navigate(['/tickets'], { queryParams: this.route.snapshot.queryParams });
       },
       error: () => {
         this.saving.set(false);

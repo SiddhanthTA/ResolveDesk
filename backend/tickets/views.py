@@ -1,6 +1,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from .mongo import check_mongodb_connection
@@ -16,7 +17,7 @@ from .serializers import (
 class HealthCheckView(APIView):
     @extend_schema(
         summary="Check API and MongoDB health",
-        responses={200: dict, 503: dict},
+        responses={200: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
     )
     def get(self, request):
         try:
@@ -91,7 +92,7 @@ class TicketListCreateView(APIView):
     @extend_schema(
         summary="Create a ticket",
         request=TicketCreateSerializer,
-        responses={201: TicketResponseSerializer, 400: dict, 503: dict},
+        responses={201: TicketResponseSerializer, 400: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
     )
     def post(self, request):
         serializer = TicketCreateSerializer(data=request.data)
@@ -111,7 +112,7 @@ class TicketListCreateView(APIView):
 class TicketDetailView(APIView):
     @extend_schema(
         summary="Retrieve a ticket",
-        responses={200: TicketResponseSerializer, 404: dict, 503: dict},
+        responses={200: TicketResponseSerializer, 404: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
     )
     def get(self, request, ticket_id):
         try:
@@ -131,7 +132,7 @@ class TicketDetailView(APIView):
     @extend_schema(
         summary="Update ticket status or resolution note",
         request=TicketUpdateSerializer,
-        responses={200: TicketResponseSerializer, 400: dict, 404: dict, 503: dict},
+        responses={200: TicketResponseSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
     )
     def patch(self, request, ticket_id):
         try:

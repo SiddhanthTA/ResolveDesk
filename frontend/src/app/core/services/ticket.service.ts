@@ -1,0 +1,45 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import {
+  CreateTicketRequest,
+  SimilarTicketRequest,
+  Ticket,
+  TicketFilters,
+  TicketListResponse,
+  UpdateTicketRequest,
+} from '../models/ticket.model';
+
+const API_BASE_URL = 'http://127.0.0.1:8000/api';
+
+@Injectable({ providedIn: 'root' })
+export class TicketService {
+  private readonly http = inject(HttpClient);
+
+  getTickets(filters: TicketFilters = {}): Observable<TicketListResponse> {
+    let params = new HttpParams();
+    if (filters.status) params = params.set('status', filters.status);
+    if (filters.category) params = params.set('category', filters.category);
+
+    return this.http.get<TicketListResponse>(`${API_BASE_URL}/tickets/`, { params });
+  }
+
+  getTicket(id: string): Observable<Ticket> {
+    return this.http.get<Ticket>(`${API_BASE_URL}/tickets/${encodeURIComponent(id)}/`);
+  }
+
+  createTicket(payload: CreateTicketRequest): Observable<Ticket> {
+    return this.http.post<Ticket>(`${API_BASE_URL}/tickets/`, payload);
+  }
+
+  updateTicket(id: string, payload: UpdateTicketRequest): Observable<Ticket> {
+    return this.http.patch<Ticket>(
+      `${API_BASE_URL}/tickets/${encodeURIComponent(id)}/`,
+      payload,
+    );
+  }
+
+  getSimilarTickets(payload: SimilarTicketRequest): Observable<Ticket[]> {
+    return this.http.post<Ticket[]>(`${API_BASE_URL}/tickets/similar/`, payload);
+  }
+}

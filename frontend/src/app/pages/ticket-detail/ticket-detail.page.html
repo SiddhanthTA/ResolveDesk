@@ -1,0 +1,84 @@
+<a class="back-link" routerLink="/tickets"><svg lucideArrowLeft></svg> Back to all tickets</a>
+
+@if (loading()) {
+  <div class="detail-loading"><span></span><span></span><span></span></div>
+} @else if (loadError()) {
+  <section class="detail-error">
+    <div class="error-icon"><svg lucideCircleAlert></svg></div>
+    <h1>Ticket unavailable</h1>
+    <p>{{ loadError() }}</p>
+    <a routerLink="/tickets" class="button button-primary">Return to tickets</a>
+  </section>
+} @else if (ticket(); as current) {
+  <div class="detail-heading">
+    <div>
+      <div class="ticket-breadcrumb"><span>ALL TICKETS</span><i>/</i><strong>{{ shortId(current.id) }}</strong></div>
+      <div class="detail-title-row"><h1>{{ current.title }}</h1><span class="status-pill" [class]="statusClass(current.status)">{{ current.status }}</span></div>
+      <p class="detail-subtitle">Created {{ current.created_at | date:'MMMM d, y · h:mm a' }}</p>
+    </div>
+    <span class="category-chip"><svg lucideTag></svg>{{ current.category }}</span>
+  </div>
+
+  <div class="detail-layout">
+    <div class="detail-main">
+      <section class="content-card issue-card">
+        <div class="content-card-heading"><span class="card-icon"><svg lucideFileText></svg></span><div><span class="section-kicker">TICKET DESCRIPTION</span><h2>What happened</h2></div></div>
+        <p class="issue-description">{{ current.description }}</p>
+        <div class="issue-footer"><span>{{ current.description.length }} characters</span><span>Last updated {{ current.updated_at | date:'MMM d, y · h:mm a' }}</span></div>
+      </section>
+
+      @if (current.resolution_note) {
+        <section class="content-card resolution-card">
+          <div class="content-card-heading"><span class="card-icon resolution-icon"><svg lucideShieldCheck></svg></span><div><span class="section-kicker">SUPPORT RESPONSE</span><h2>Resolution note</h2></div><span class="resolved-label"><i></i> RESOLVED</span></div>
+          <p class="resolution-copy">{{ current.resolution_note }}</p>
+        </section>
+      } @else {
+        <section class="pending-card">
+          <div class="pending-icon"><svg lucideClock3></svg></div>
+          <div><strong>{{ current.status === 'In Progress' ? 'Your issue is being worked on' : 'This ticket is waiting for attention' }}</strong><p>{{ current.status === 'In Progress' ? 'A support agent is currently looking into this issue.' : 'A support agent will review the details and update the ticket.' }}</p></div>
+        </section>
+      }
+    </div>
+
+    <aside class="detail-aside">
+      <section class="content-card meta-card">
+        <span class="section-kicker">TICKET INFORMATION</span>
+        <h2>Details</h2>
+        <div class="meta-row"><span><svg lucideTag></svg> Category</span><strong>{{ current.category }}</strong></div>
+        <div class="meta-row"><span><svg lucideCalendarDays></svg> Created</span><strong>{{ current.created_at | date:'MMM d, y' }}</strong></div>
+        <div class="meta-row"><span><svg lucideClock3></svg> Status</span><span class="status-pill" [class]="statusClass(current.status)">{{ current.status }}</span></div>
+        <div class="meta-row meta-id"><span>Ticket ID</span><strong>{{ shortId(current.id) }}</strong></div>
+      </section>
+
+      @if (demoMode.role() === 'agent') {
+        <section class="content-card agent-card">
+          <div class="agent-heading"><div class="agent-heading-icon"><svg lucideShieldCheck></svg></div><div><span class="section-kicker">AGENT WORKSPACE</span><h2>Manage ticket</h2></div></div>
+          <p class="agent-intro">Update the issue status and leave a useful note for the person who reported it.</p>
+          <form [formGroup]="agentForm" (ngSubmit)="saveUpdate()" novalidate>
+            <label for="agent-status">Ticket status</label>
+            <select id="agent-status" formControlName="status">
+              @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
+            </select>
+            <label for="agent-resolution">Resolution note @if (agentForm.controls.status.value === 'Resolved') { <span>*</span> }</label>
+            <textarea id="agent-resolution" rows="5" formControlName="resolution_note" maxlength="5000" placeholder="Summarize what was done to resolve the issue..."></textarea>
+            @if (agentForm.controls.status.value === 'Resolved' && !agentForm.controls.resolution_note.value.trim() && agentForm.controls.resolution_note.touched) {
+              <small class="field-error">A resolution note is required.</small>
+            }
+            @if (saveError()) { <div class="save-error" role="alert">{{ saveError() }}</div> }
+            @if (saved()) { <div class="save-success"><svg lucideCheck></svg> Changes saved successfully.</div> }
+            <button class="button button-primary save-button" type="submit" [disabled]="saving()">
+              @if (saving()) { <svg class="spin" lucideLoaderCircle></svg> Saving... }
+              @else { Save changes }
+            </button>
+          </form>
+        </section>
+      } @else {
+        <section class="content-card support-note">
+          <div class="support-note-icon"><svg lucideInfo></svg></div>
+          <strong>Your support team is on it</strong>
+          <p>Status updates and resolution notes will appear here as the team works on your request.</p>
+        </section>
+      }
+    </aside>
+  </div>
+}

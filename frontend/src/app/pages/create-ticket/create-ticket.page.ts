@@ -6,6 +6,7 @@ import { LucideArrowLeft, LucideArrowRight, LucideCheck, LucideInfo, LucideLoade
 import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { TICKET_CATEGORIES, Ticket, TicketCategory } from '../../core/models/ticket.model';
 import { TicketService } from '../../core/services/ticket.service';
+import { DemoModeService } from '../../core/services/demo-mode.service';
 
 function noWhitespace(control: AbstractControl): ValidationErrors | null {
   return typeof control.value === 'string' && control.value.trim().length === 0
@@ -37,6 +38,7 @@ export class CreateTicketPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly ticketService = inject(TicketService);
   private readonly router = inject(Router);
+  private readonly demoMode = inject(DemoModeService);
   private readonly destroyRef = inject(DestroyRef);
 
   readonly categories = TICKET_CATEGORIES;
@@ -52,6 +54,10 @@ export class CreateTicketPage {
   });
 
   constructor() {
+    if (this.demoMode.role() === 'agent') {
+      void this.router.navigate(['/dashboard']);
+      return;
+    }
     this.form.valueChanges.pipe(
       debounceTime(700),
       map((value) => ({

@@ -74,3 +74,9 @@ def update_ticket(ticket_id, validated_data):
         return None
 
     return get_ticket_by_id(ticket_id)
+
+
+def list_resolved_tickets():
+    """Return only resolved tickets for similarity comparisons."""
+    documents = tickets_collection.find({"status": "Resolved"}).sort("created_at", -1)
+    return [serialize_ticket(document) for document in documents]

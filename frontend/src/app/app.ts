@@ -30,7 +30,4 @@ import { DemoModeService } from './core/services/demo-mode.service';
 export class App {
   readonly demoMode = inject(DemoModeService);
 
-  toggleRole(): void {
-    this.demoMode.toggleRole();
-  }
 }

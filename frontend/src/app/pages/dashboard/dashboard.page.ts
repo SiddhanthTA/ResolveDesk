@@ -1,7 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { LucideArrowRight, LucideCircleCheck, LucideClock3, LucidePlus, LucideTicket } from '@lucide/angular';
+import { LucideArrowRight, LucideCircleCheck, LucideClock3, LucidePlus, LucideSparkles, LucideTicket } from '@lucide/angular';
 import { Ticket, TicketStatus } from '../../core/models/ticket.model';
 import { DemoModeService } from '../../core/services/demo-mode.service';
 import { TicketService } from '../../core/services/ticket.service';

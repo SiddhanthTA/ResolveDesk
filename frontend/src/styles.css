@@ -17,3 +17,17 @@
 @media(max-width:680px){.sidebar{background:#101624!important;border-color:var(--line)!important}.primary-nav a.active{background:#282342!important}}
 
 .agent-focus{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px;padding:19px 22px;border:1px solid #574c86;border-radius:14px;background:radial-gradient(ellipse at 0 0,#2a2547 0%,#171d2d 65%);}.agent-focus>div{min-width:0}.agent-focus .section-kicker{margin-bottom:5px;color:#b1a5ff!important}.agent-focus strong{display:block;font-size:35px;line-height:1.1;letter-spacing:-1px;color:#f3f0ff}.agent-focus p{margin:5px 0 0;color:#a7afc4;font-size:11px}.agent-focus .button{white-space:nowrap}@media(max-width:600px){.agent-focus{align-items:flex-start;flex-direction:column}.agent-focus .button{width:100%}}
+
+/* Consistent custom select controls and refined filter toolbar */
+select{color-scheme:dark;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a99cff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;background-size:14px;padding-right:36px!important}
+select option{background:#171e2e;color:#edf0fa}
+.filter-select{position:relative;min-height:42px;height:42px;padding:0 35px 0 12px!important;border:1px solid #35415a!important;border-radius:10px!important;background:linear-gradient(180deg,#1a2334,#141c2b)!important;color:#9aa6bd!important;box-shadow:inset 0 1px #ffffff08;transition:border-color .16s,box-shadow .16s,background .16s}
+.filter-select:focus-within{border-color:#8172ed!important;box-shadow:0 0 0 3px #7968f226!important}
+.filter-select svg{width:15px!important;height:15px!important;color:#a99cff!important}
+.filter-select select{min-width:112px!important;height:40px;padding:0 20px 0 0!important;color:#e2e6f3!important;font-size:10px!important;font-weight:650!important;background-image:none!important}
+.filter-select:has(svg) select{min-width:105px!important}
+.search-field{height:42px!important;border-radius:10px!important;border-color:#35415a!important;background:#111927!important;padding:0 12px!important}
+.search-field svg{width:15px!important;height:15px!important;color:#9c91ed!important}
+.search-field input{font-size:11px!important;color:#edf0fa!important}
+.search-field input::placeholder{color:#74819a!important}
+.form-field select,.agent-card select{min-height:42px;border-radius:10px!important;padding-left:12px!important;background-color:#0d1320!important}

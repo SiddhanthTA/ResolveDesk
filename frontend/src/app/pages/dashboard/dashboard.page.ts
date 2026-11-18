@@ -5,7 +5,7 @@ import { LucideArrowRight, LucideCircleCheck, LucideClock3, LucidePlus, LucideSp
 import { Ticket, TicketStatus } from '../../core/models/ticket.model';
 import { DemoModeService } from '../../core/services/demo-mode.service';
 import { TicketService } from '../../core/services/ticket.service';
-@Component({selector:'app-dashboard-page',standalone:true,imports:[DatePipe,RouterLink,LucideArrowRight,LucideCircleCheck,LucideClock3,LucidePlus,LucideTicket],templateUrl:'./dashboard.page.html',styleUrl:'./dashboard.page.css'})
+@Component({selector:'app-dashboard-page',standalone:true,imports:[DatePipe,RouterLink,LucideArrowRight,LucideCircleCheck,LucideClock3,LucidePlus,LucideSparkles,LucideTicket],templateUrl:'./dashboard.page.html',styleUrl:'./dashboard.page.css'})
 export class DashboardPage implements OnInit {
  private readonly ticketService=inject(TicketService);
  readonly demoMode=inject(DemoModeService);

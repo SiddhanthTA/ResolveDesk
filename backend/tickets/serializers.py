@@ -66,3 +66,22 @@ class TicketResponseSerializer(serializers.Serializer):
 class TicketListResponseSerializer(serializers.Serializer):
     count = serializers.IntegerField()
     results = TicketResponseSerializer(many=True)
+
+
+class SimilarTicketRequestSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=150, trim_whitespace=True)
+    description = serializers.CharField(max_length=5000, trim_whitespace=True)
+
+    def validate_title(self, value):
+        if not value:
+            raise serializers.ValidationError("Title cannot be empty.")
+        return value
+
+    def validate_description(self, value):
+        if not value:
+            raise serializers.ValidationError("Description cannot be empty.")
+        return value
+
+
+class SimilarTicketResponseSerializer(TicketResponseSerializer):
+    similarity_score = serializers.FloatField()

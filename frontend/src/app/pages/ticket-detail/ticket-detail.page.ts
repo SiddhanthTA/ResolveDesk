@@ -53,10 +53,14 @@ export class TicketDetailPage implements OnInit {
   ngOnInit(): void {
     this.route.paramMap.pipe(
       map((params) => params.get('id') ?? ''),
-      switchMap((id) => this.ticketService.getTicket(id).pipe(
-        map((ticket) => ({ ticket, errorStatus: 0 })),
-        catchError((error: HttpErrorResponse) => of({ ticket: null, errorStatus: error.status })),
-      )),
+      switchMap((id) => {
+        this.loading.set(true);
+        this.loadError.set('');
+        return this.ticketService.getTicket(id).pipe(
+          map((ticket) => ({ ticket, errorStatus: 0 })),
+          catchError((error: HttpErrorResponse) => of({ ticket: null, errorStatus: error.status })),
+        );
+      }),
       takeUntilDestroyed(this.destroyRef),
     ).subscribe(({ ticket, errorStatus }) => {
       this.loading.set(false);

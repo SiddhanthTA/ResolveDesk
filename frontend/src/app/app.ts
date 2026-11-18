@@ -11,13 +11,13 @@ export class App {
  readonly spotlight=signal({left:0,top:0,width:0,height:0});
  readonly tooltip=signal({left:0,top:0});
  readonly tourSteps:TourStep[]=[
-  {title:'Your workspace overview',description:'This is your starting point. The overview gives you a quick read on ticket activity and what needs attention.',path:'/dashboard',selector:'[data-tour="overview"]',target:'Workspace overview'},
+  {title:'Your workspace overview',description:'This is your starting point. The overview gives you a quick read on ticket activity and what needs attention.',path:'/dashboard',selector:'[data-tour="dashboard-heading"]',target:'Workspace overview'},
   {title:'Create a support request',description:'Use this form to describe the issue and choose the category that best fits. Clear details make it easier for the team to investigate.',path:'/tickets/new',selector:'[data-tour="create-form"]',target:'New ticket form'},
   {title:'AI finds related cases',description:'As you type, ResolveDesk compares your issue with previously resolved tickets. These are useful references, not guaranteed answers.',path:'/tickets/new',selector:'[data-tour="ai-panel"]',target:'AI similar-ticket suggestions'},
   {title:'Find and filter tickets',description:'Search the list and narrow it by status or category. Your selected filters remain in the URL so you can return to the same view.',path:'/tickets',selector:'[data-tour="ticket-filters"]',target:'Search and filters'},
   {title:'Open a ticket',description:'Select a ticket to read the full description, review its status and see the support team's resolution note.',path:'/tickets',selector:'[data-tour="ticket-row"]',target:'Ticket list'}
  ];
- switchRole(role:'user'|'agent'):void{this.demoMode.setRole(role);if(this.router.url.startsWith('/tickets/new')&&role==='agent')void this.router.navigate(['/dashboard']);if(role==='agent')this.closeTour();}
+ switchRole(role:'user'|'agent'):void{this.demoMode.setRole(role);this.closeTour();void this.router.navigate(['/dashboard']);}
  startTour():void{if(this.demoMode.role()!=='user')return;this.tourStep.set(0);this.tourOpen.set(true);void this.showTourStep(0);}
  closeTour():void{this.tourOpen.set(false);}
  nextTourStep():void{const next=this.tourStep()+1;if(next>=this.tourSteps.length){this.closeTour();return;}this.tourStep.set(next);void this.showTourStep(next);}

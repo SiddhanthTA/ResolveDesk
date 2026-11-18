@@ -1,13 +1,23 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from .mongo import check_mongodb_connection
 from .repositories import ticket_repository
-from .serializers import TicketCreateSerializer, TicketUpdateSerializer
+from .serializers import (
+    TicketCreateSerializer,
+    TicketListResponseSerializer,
+    TicketResponseSerializer,
+    TicketUpdateSerializer,
+)
 
 
 class HealthCheckView(APIView):
+    @extend_schema(
+        summary="Check API and MongoDB health",
+        responses={200: dict, 503: dict},
+    )
     def get(self, request):
         try:
             check_mongodb_connection()
@@ -24,6 +34,27 @@ class HealthCheckView(APIView):
 
 
 class TicketListCreateView(APIView):
+    @extend_schema(
+        summary="List tickets",
+        description="Optionally filter tickets by status and category.",
+        parameters=[
+            OpenApiParameter(
+                name="status",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                enum=["Open", "In Progress", "Resolved"],
+                required=False,
+            ),
+            OpenApiParameter(
+                name="category",
+                type=str,
+                location=OpenApiParameter.QUERY,
+                enum=["Account", "Technical", "Billing", "General"],
+                required=False,
+            ),
+        ],
+        responses={200: TicketListResponseSerializer},
+    )
     def get(self, request):
         filters = {}
         ticket_status = request.query_params.get("status")
@@ -57,6 +88,11 @@ class TicketListCreateView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+    @extend_schema(
+        summary="Create a ticket",
+        request=TicketCreateSerializer,
+        responses={201: TicketResponseSerializer, 400: dict, 503: dict},
+    )
     def post(self, request):
         serializer = TicketCreateSerializer(data=request.data)
         if not serializer.is_valid():
@@ -73,6 +109,10 @@ class TicketListCreateView(APIView):
 
 
 class TicketDetailView(APIView):
+    @extend_schema(
+        summary="Retrieve a ticket",
+        responses={200: TicketResponseSerializer, 404: dict, 503: dict},
+    )
     def get(self, request, ticket_id):
         try:
             ticket = ticket_repository.get_ticket_by_id(ticket_id)
@@ -88,6 +128,11 @@ class TicketDetailView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+    @extend_schema(
+        summary="Update ticket status or resolution note",
+        request=TicketUpdateSerializer,
+        responses={200: TicketResponseSerializer, 400: dict, 404: dict, 503: dict},
+    )
     def patch(self, request, ticket_id):
         try:
             existing_ticket = ticket_repository.get_ticket_by_id(ticket_id)

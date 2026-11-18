@@ -1,4 +1,5 @@
 import { DatePipe } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -53,15 +54,17 @@ export class TicketDetailPage implements OnInit {
     this.route.paramMap.pipe(
       map((params) => params.get('id') ?? ''),
       switchMap((id) => this.ticketService.getTicket(id).pipe(
-        map((ticket) => ({ ticket })),
-        catchError(() => of({ ticket: null })),
+        map((ticket) => ({ ticket, errorStatus: 0 })),
+        catchError((error: HttpErrorResponse) => of({ ticket: null, errorStatus: error.status })),
       )),
       takeUntilDestroyed(this.destroyRef),
-    ).subscribe(({ ticket }) => {
+    ).subscribe(({ ticket, errorStatus }) => {
       this.loading.set(false);
       if (!ticket) {
         this.ticket.set(null);
-        this.loadError.set('This ticket could not be found. It may have been removed or the link may be incorrect.');
+        this.loadError.set(errorStatus === 404
+          ? 'This ticket could not be found. It may have been removed or the link may be incorrect.'
+          : 'We could not load this ticket. Check that the Django API and MongoDB are running, then try again.');
         return;
       }
       this.loadError.set('');

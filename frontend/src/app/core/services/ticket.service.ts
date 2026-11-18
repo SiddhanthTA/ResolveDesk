@@ -10,7 +10,9 @@ import {
   UpdateTicketRequest,
 } from '../models/ticket.model';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+import { environment } from '../../../environments/environment';
+
+const API_BASE_URL = environment.apiBaseUrl;
 
 @Injectable({ providedIn: 'root' })
 export class TicketService {

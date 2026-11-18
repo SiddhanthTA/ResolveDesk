@@ -1,37 +1,35 @@
 <div class="app-shell">
-  <aside class="sidebar">
-    <a class="brand" routerLink="/dashboard" aria-label="ResolveDesk home"><span class="brand-mark">R</span><span class="brand-copy"><strong>resolve<span>desk</span></strong><small>SMART SUPPORT WORKSPACE</small></span></a>
-    <div class="workspace-switcher"><div class="workspace-avatar">RD</div><div class="workspace-copy"><strong>ResolveDesk workspace</strong><span>Support workspace</span></div><span class="workspace-chevron">⌄</span></div>
-    <div class="nav-section-label">WORKSPACE</div>
-    <nav class="primary-nav" aria-label="Main navigation">
-      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"><svg lucideLayoutDashboard></svg><span>Overview</span></a>
-      <a routerLink="/tickets" routerLinkActive="active"><svg lucideTicket></svg><span>{{ demoMode.role() === 'agent' ? 'Work queue' : 'My tickets' }}</span></a>
-      @if (demoMode.role() === 'user') { <a routerLink="/tickets/new" routerLinkActive="active"><svg lucidePlus></svg><span>Create ticket</span></a> }
-    </nav>
-    <div class="sidebar-spacer"></div>
-    <button class="sidebar-help tour-launch" type="button" (click)="startTour()">
-      <div class="help-icon"><svg lucideCircleHelp></svg></div><strong>Take a quick tour</strong>
-      <p>See how ResolveDesk works, from submitting an issue to finding a past resolution.</p><span class="tour-link">Explore workspace →</span>
-    </button>
-    <div class="sidebar-footer"><div class="footer-avatar">RD</div><div class="footer-user"><strong>{{ demoMode.role() === 'agent' ? 'Support Agent' : 'End User' }}</strong><span>Local demo workspace</span></div><span class="local-badge">LOCAL</span></div>
-  </aside>
-  <main class="main-area">
-    <header class="topbar"><div class="topbar-context"><span class="eyebrow">RESOLVEDESK <span class="eyebrow-dot">/</span> WORKSPACE</span><span class="topbar-caption">{{ demoMode.role() === 'agent' ? 'Triage clearly. Resolve thoughtfully.' : 'A clearer path from issue to answer.' }}</span></div>
-      <div class="topbar-actions"><div class="demo-switcher" aria-label="Demo role"><span class="demo-label">VIEW AS</span><button type="button" [class.selected]="demoMode.role() === 'user'" (click)="switchRole('user')">End user</button><button type="button" [class.selected]="demoMode.role() === 'agent'" (click)="switchRole('agent')">Agent</button></div><div class="topbar-avatar">{{ demoMode.role() === 'agent' ? 'SA' : 'EU' }}</div></div>
-    </header>
-    <section class="page-container"><router-outlet /></section>
-    <footer class="app-footer"><span>© 2026 ResolveDesk</span><span><i></i> Local demo environment</span></footer>
-  </main>
+ <aside class="sidebar">
+  <a class="brand" routerLink="/dashboard" aria-label="ResolveDesk home"><span class="brand-mark">R</span><span class="brand-copy"><strong>resolve<span>desk</span></strong><small>SMART SUPPORT WORKSPACE</small></span></a>
+  <div class="nav-section-label">NAVIGATION</div>
+  <nav class="primary-nav" aria-label="Main navigation">
+   <a data-tour="overview" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><svg lucideLayoutDashboard></svg><span>Overview</span></a>
+   <a routerLink="/tickets" routerLinkActive="active"><svg lucideTicket></svg><span>{{demoMode.role()==='agent'?'Work queue':'My tickets'}}</span></a>
+   @if(demoMode.role()==='user'){<a data-tour="create-nav" routerLink="/tickets/new" routerLinkActive="active"><svg lucidePlus></svg><span>Create ticket</span></a>}
+  </nav>
+  <div class="sidebar-spacer"></div>
+  @if(demoMode.role()==='user'){
+   <button class="sidebar-help tour-launch" type="button" (click)="startTour()"><div class="help-icon">?</div><strong>New to ResolveDesk?</strong><p>Take a guided tour of the workspace and its key features.</p><span class="tour-link">Start the walkthrough <span>↗</span></span></button>
+  }
+  <div class="sidebar-footer"><div class="footer-avatar">{{demoMode.role()==='agent'?'SA':'EU'}}</div><div class="footer-user"><strong>{{demoMode.role()==='agent'?'Support Agent':'End User'}}</strong><span>{{demoMode.role()==='agent'?'Agent workspace':'Customer workspace'}}</span></div><span class="local-badge">DEMO</span></div>
+ </aside>
+ <main class="main-area">
+  <header class="topbar"><div class="topbar-context"><span class="eyebrow">RESOLVEDESK <span class="eyebrow-dot">/</span> {{demoMode.role()==='agent'?'AGENT CONSOLE':'CUSTOMER SPACE'}}</span><span class="topbar-caption">{{demoMode.role()==='agent'?'Triage clearly. Resolve thoughtfully.':'A clearer path from issue to answer.'}}</span></div>
+   <div class="topbar-actions"><div class="demo-switcher" aria-label="Demo role"><span class="demo-label">DEMO ROLE</span><button type="button" [class.selected]="demoMode.role()==='user'" (click)="switchRole('user')">End user</button><button type="button" [class.selected]="demoMode.role()==='agent'" (click)="switchRole('agent')">Agent</button></div><div class="topbar-avatar">{{demoMode.role()==='agent'?'SA':'EU'}}</div></div>
+  </header>
+  <section class="page-container"><router-outlet /></section>
+  <footer class="app-footer"><span>© 2026 ResolveDesk</span><span><i></i> Local demo environment</span></footer>
+ </main>
 </div>
-@if (tourOpen()) {
-  <div class="tour-backdrop" role="presentation">
-    <section class="tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title">
-      <div class="tour-topline"><span>RESOLVEDESK FIELD GUIDE</span><button type="button" aria-label="Close tour" (click)="closeTour()">×</button></div>
-      <div class="tour-progress"><span [style.width.%]="((tourStep()+1)/tourSteps.length)*100"></span></div>
-      <div class="tour-step-count">STEP {{ tourStep()+1 }} OF {{ tourSteps.length }}</div>
-      <h2 id="tour-title">{{ tourSteps[tourStep()].title }}</h2><p>{{ tourSteps[tourStep()].description }}</p>
-      <div class="tour-target"><span class="tour-target-arrow">↗</span><span>{{ tourSteps[tourStep()].target }}</span></div>
-      <div class="tour-actions"><button type="button" class="tour-skip" (click)="closeTour()">Skip tour</button><div><button type="button" class="tour-next" (click)="nextTourStep()">{{ tourStep() === tourSteps.length-1 ? 'Finish' : 'Next step →' }}</button></div></div>
-    </section>
-  </div>
+@if(tourOpen()){
+ <div class="tour-dimmer" aria-hidden="true"></div>
+ <div class="tour-spotlight" [style.left.px]="spotlight().left" [style.top.px]="spotlight().top" [style.width.px]="spotlight().width" [style.height.px]="spotlight().height"></div>
+ <section class="tour-popover" role="dialog" aria-modal="true" aria-labelledby="tour-title" [style.left.px]="tooltip().left" [style.top.px]="tooltip().top">
+  <div class="tour-topline"><span>RESOLVEDESK · GUIDED TOUR</span><button type="button" aria-label="Close tour" (click)="closeTour()">×</button></div>
+  <div class="tour-progress"><span [style.width.%]="((tourStep()+1)/tourSteps.length)*100"></span></div>
+  <div class="tour-step-count">0{{tourStep()+1}} <span>/ 0{{tourSteps.length}}</span></div>
+  <h2 id="tour-title">{{tourSteps[tourStep()].title}}</h2><p>{{tourSteps[tourStep()].description}}</p>
+  <div class="tour-target"><i></i>{{tourSteps[tourStep()].target}}</div>
+  <div class="tour-actions"><button type="button" class="tour-skip" (click)="closeTour()">Exit tour</button><button type="button" class="tour-next" (click)="nextTourStep()">{{tourStep()===tourSteps.length-1?'Finish tour':'Next feature →'}}</button></div>
+ </section>
 }

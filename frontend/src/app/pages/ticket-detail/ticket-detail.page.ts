@@ -143,6 +143,7 @@ export class TicketDetailPage implements OnInit {
   private autoSaveResolutionNote(note: string): void {
     const normalizedNote = note.trim();
     if (this.wordCount(normalizedNote) < 2) {
+      this.pendingAutoSave = null;
       this.autoSaveMessage.set('Add at least two words to save the resolution and mark this ticket as Resolved.');
       return;
     }

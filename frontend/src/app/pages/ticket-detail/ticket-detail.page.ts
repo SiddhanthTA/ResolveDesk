@@ -170,7 +170,10 @@ export class TicketDetailPage implements OnInit {
 
   isMyTurn(): boolean {
     const current = this.ticket();
-    return !!current && current.last_reply_by !== this.demoMode.role();
+    if (!current) return false;
+    return current.next_reply_by
+      ? current.next_reply_by === this.demoMode.role()
+      : current.last_reply_by !== this.demoMode.role();
   }
 
   canSendReply(): boolean {

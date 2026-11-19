@@ -19,6 +19,7 @@ export interface Ticket {
   agent_reply_count: number;
   last_reply_at: string | null;
   last_reply_by: 'user' | 'agent' | null;
+  next_reply_by: 'user' | 'agent' | null;
   is_reopened: boolean;
   rating: number | null;
   rating_note: string;

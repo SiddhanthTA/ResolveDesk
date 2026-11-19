@@ -72,6 +72,7 @@ class TicketResponseSerializer(serializers.Serializer):
     agent_reply_count = serializers.IntegerField()
     last_reply_at = serializers.DateTimeField(allow_null=True)
     last_reply_by = serializers.ChoiceField(choices=("user", "agent"), allow_null=True)
+    next_reply_by = serializers.ChoiceField(choices=("user", "agent"), allow_null=True)
     is_reopened = serializers.BooleanField()
     rating = serializers.IntegerField(allow_null=True, min_value=1, max_value=5)
     rating_note = serializers.CharField(allow_blank=True)

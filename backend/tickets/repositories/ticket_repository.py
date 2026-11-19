@@ -19,6 +19,7 @@ def serialize_ticket(ticket):
     ticket.setdefault("agent_reply_count", 0)
     ticket.setdefault("last_reply_at", None)
     ticket.setdefault("last_reply_by", None)
+    ticket.setdefault("next_reply_by", None)
     ticket.setdefault("is_reopened", False)
     ticket.setdefault("rating", None)
     ticket.setdefault("rating_note", "")
@@ -136,13 +137,21 @@ def append_ticket_reply(ticket_id, sender_role, message):
                 {count_field: {"$lt": 5}},
                 {count_field: {"$exists": False}},
             ]},
-            {"last_reply_by": {"$ne": sender_role}},
+            {"$or": [
+                {"next_reply_by": sender_role},
+                {"next_reply_by": {"$exists": False}, "last_reply_by": {"$ne": sender_role}},
+            ]},
         ],
     }
     updates = {
         "$push": {"replies": reply},
         "$inc": {count_field: 1},
-        "$set": {"last_reply_at": now, "last_reply_by": sender_role, "updated_at": now},
+        "$set": {
+            "last_reply_at": now,
+            "last_reply_by": sender_role,
+            "next_reply_by": "agent" if sender_role == "user" else "user",
+            "updated_at": now,
+        },
     }
     updated = tickets_collection.find_one_and_update(
         query, updates, return_document=ReturnDocument.AFTER
@@ -152,7 +161,7 @@ def append_ticket_reply(ticket_id, sender_role, message):
 
     existing = tickets_collection.find_one(
         {"_id": object_id},
-        {"_id": 1, "status": 1, count_field: 1, "last_reply_by": 1},
+        {"_id": 1, "status": 1, count_field: 1, "last_reply_by": 1, "next_reply_by": 1},
     )
     if existing is None:
         return None, "not_found"
@@ -160,7 +169,10 @@ def append_ticket_reply(ticket_id, sender_role, message):
         return None, "ticket_resolved"
     if existing.get(count_field, 0) >= 5:
         return None, "limit_reached"
-    if existing.get("last_reply_by") == sender_role:
+    next_role = existing.get("next_reply_by")
+    if next_role is not None and next_role != sender_role:
+        return None, "not_your_turn"
+    if next_role is None and existing.get("last_reply_by") == sender_role:
         return None, "not_your_turn"
     return None, "not_updated"
 
@@ -177,6 +189,7 @@ def reopen_ticket(ticket_id):
         {"$set": {
             "status": "Open",
             "is_reopened": True,
+            "next_reply_by": "user",
             "rating": None,
             "rating_note": "",
             "rating_created_at": None,

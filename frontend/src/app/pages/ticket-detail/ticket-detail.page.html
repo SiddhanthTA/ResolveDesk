@@ -29,7 +29,7 @@
 
       @if (current.resolution_note) {
         <section class="content-card resolution-card">
-          <div class="content-card-heading"><span class="card-icon resolution-icon"><svg lucideShieldCheck></svg></span><div><span class="section-kicker">SUPPORT RESPONSE</span><h2>Resolution note</h2></div><span class="resolved-label"><i></i> RESOLVED</span></div>
+          <div class="content-card-heading"><span class="card-icon resolution-icon"><svg lucideShieldCheck></svg></span><div><span class="section-kicker">SUPPORT RESPONSE</span><h2>Resolution note</h2></div><span class="resolved-label"><i></i> {{ current.status === 'Resolved' ? 'RESOLVED' : 'PREVIOUS RESOLUTION' }}</span></div>
           <p class="resolution-copy">{{ current.resolution_note }}</p>
         </section>
       } @else {

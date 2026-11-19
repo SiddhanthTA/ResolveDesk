@@ -1,6 +1,6 @@
 # ResolveDesk
 
-ResolveDesk is a smart support desk prototype. People can report software issues, browse ticket progress, and see similar previously resolved issues before submitting a new request. Support agents can update ticket statuses and add resolution notes.
+ResolveDesk is a smart support desk prototype. People can report software issues, browse ticket progress, and see similar previously resolved issues before submitting a new request. Support agents can update ticket statuses, add an original resolution note, and continue a ticket conversation with the customer.
 
 ## Features
 
@@ -9,7 +9,11 @@ ResolveDesk is a smart support desk prototype. People can report software issues
 - Open a detail page for every ticket.
 - Switch between an end-user and support-agent demo view (this is a demo role switcher, not authentication).
 - Let an agent move tickets between **Open**, **In Progress**, and **Resolved**.
-- Require a resolution note before resolving a ticket.
+- Require a customer-friendly first resolution note before resolving a ticket.
+- Keep a separate conversation thread for customer and agent follow-up replies.
+- Allow up to five customer replies and five agent replies per ticket, enforced by the backend.
+- Automatically reopen a resolved ticket when the customer replies; preserve the original resolution note as history.
+- Highlight the latest reply in the conversation and ticket list.
 - Suggest up to three similar resolved tickets while a user is entering a new issue.
 - Allow ticket submission even when suggestions are unavailable or no close match is found.
 
@@ -188,7 +192,8 @@ Similarity scores are ranking signals, not probabilities or guarantees that a pr
 | GET | `/api/tickets/` | List tickets; optional `status` and `category` filters |
 | POST | `/api/tickets/` | Create a ticket |
 | GET | `/api/tickets/{id}/` | Retrieve a ticket |
-| PATCH | `/api/tickets/{id}/` | Update status and/or resolution note |
+| PATCH | `/api/tickets/{id}/` | Update status and/or the original resolution note |
+| POST | `/api/tickets/{id}/replies/` | Add a customer or agent conversation reply (five per role) |
 | POST | `/api/tickets/similar/` | Suggest up to three similar resolved tickets |
 
 ## Frontend quality checks
@@ -229,5 +234,14 @@ ResolveDesk/
 
 - The end-user/agent selector is a demonstration switch, not real authentication or authorization.
 - The project is intended for local demonstration; production deployment, authentication, notifications, and file uploads are outside the current scope.
-- The similarity model ranks resolved tickets but does not judge whether their resolution notes are correct or suitable for a new case.
+- The similarity model ranks resolved tickets but does not judge whether their resolution notes are correct or suitable for a new case. Follow-up replies are stored separately and are not sent to the similarity model. The original resolution note is preserved when a customer reopens a ticket.
 - The current similarity service calculates embeddings for the resolved ticket candidates during a request. For a larger production dataset, embeddings should be persisted and refreshed when ticket content changes.
+
+
+### Ticket conversations
+
+Each ticket has a conversation separate from its original description and first resolution note. The customer and support agent can each send up to five replies. The backend enforces the limits atomically in MongoDB and returns HTTP 409 when one side has reached its limit.
+
+A customer reply to a resolved ticket changes its status back to **Open**. When an agent opens that ticket, the existing workflow moves it to **In Progress**. Agent replies do not replace the original resolution note; the agent can change the status back to **Resolved** after the follow-up is handled. The conversation remains attached to the same ticket across these status changes.
+
+The role value used by this feature belongs to the local demo role switcher. It is not an identity or authorization system. A production version must derive the sender role from an authenticated user rather than trusting a client-supplied role.

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   CreateTicketRequest,
+  CreateTicketReplyRequest,
   SimilarTicketRequest,
   Ticket,
   TicketFilters,
@@ -39,6 +40,10 @@ export class TicketService {
       `${API_BASE_URL}/tickets/${encodeURIComponent(id)}/`,
       payload,
     );
+  }
+
+  addReply(id: string, payload: CreateTicketReplyRequest): Observable<Ticket> {
+    return this.http.post<Ticket>(`${API_BASE_URL}/tickets/${encodeURIComponent(id)}/replies/`, payload);
   }
 
   getSimilarTickets(payload: SimilarTicketRequest): Observable<Ticket[]> {

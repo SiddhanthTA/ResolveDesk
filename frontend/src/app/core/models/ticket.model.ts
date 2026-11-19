@@ -14,6 +14,11 @@ export interface Ticket {
   created_at: string;
   updated_at: string;
   similarity_score?: number;
+  replies: TicketReply[];
+  customer_reply_count: number;
+  agent_reply_count: number;
+  last_reply_at: string | null;
+  last_reply_by: 'user' | 'agent' | null;
 }
 
 export interface TicketListResponse {
@@ -43,3 +48,15 @@ export interface UpdateTicketRequest {
 }
 
 export type DemoRole = 'user' | 'agent';
+
+
+export interface TicketReply {
+  sender_role: 'user' | 'agent';
+  message: string;
+  created_at: string;
+}
+
+export interface CreateTicketReplyRequest {
+  sender_role: 'user' | 'agent';
+  message: string;
+}

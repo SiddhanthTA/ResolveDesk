@@ -16,6 +16,7 @@ from .serializers import (
     SimilarTicketRequestSerializer,
     SimilarTicketResponseSerializer,
     DeleteAllTicketsConfirmationSerializer,
+    TicketReplyCreateSerializer,
 )
 
 from .services.similarity_service import find_similar_resolved_tickets
@@ -277,3 +278,34 @@ class DeleteAllTicketsView(DevelopmentOnlyAPIView):
                 {"detail": "Unable to delete tickets. Check the MongoDB connection."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
+
+
+class TicketReplyView(APIView):
+    @extend_schema(
+        summary="Add a customer or agent reply to a ticket",
+        description=(
+            "Adds a message to the ticket conversation. Each demo role may send up to "
+            "five replies per ticket. A customer reply automatically reopens a resolved "
+            "ticket. Replies never overwrite the original resolution note. The sender "
+            "role is part of this demo API and is not authentication."
+        ),
+        request=TicketReplyCreateSerializer,
+        responses={201: TicketResponseSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
+    )
+    def post(self, request, ticket_id):
+        serializer = TicketReplyCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            ticket, result = ticket_repository.append_ticket_reply(
+                ticket_id,
+                serializer.validated_data["sender_role"],
+                serializer.validated_data["message"],
+            )
+            if result == "not_found":
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result == "limit_reached":
+                return Response({"detail": "This side has already used all five replies for this ticket."}, status=status.HTTP_409_CONFLICT)
+            return Response(ticket, status=status.HTTP_201_CREATED)
+        except Exception:
+            return Response({"detail": "Unable to add the reply right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

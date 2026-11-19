@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from bson import ObjectId
 from bson.errors import InvalidId
+from pymongo import ReturnDocument
 
 from tickets.mongo import tickets_collection
 
@@ -13,6 +14,16 @@ def serialize_ticket(ticket):
 
     ticket["id"] = str(ticket.pop("_id"))
     ticket.pop("_demo_seed_batch", None)
+    ticket.setdefault("replies", [])
+    ticket.setdefault("customer_reply_count", 0)
+    ticket.setdefault("agent_reply_count", 0)
+    ticket.setdefault("last_reply_at", None)
+    ticket.setdefault("last_reply_by", None)
+    if ticket.get("last_reply_at") is not None:
+        ticket["last_reply_at"] = ticket["last_reply_at"].isoformat()
+    for reply in ticket["replies"]:
+        if reply.get("created_at") is not None:
+            reply["created_at"] = reply["created_at"].isoformat()
     for field in ("created_at", "updated_at"):
         value = ticket.get(field)
         if value is not None:
@@ -98,3 +109,35 @@ def delete_all_tickets():
     """Delete every ticket document. Intended only for local development tools."""
     result = tickets_collection.delete_many({})
     return result.deleted_count
+
+
+def append_ticket_reply(ticket_id, sender_role, message):
+    try:
+        object_id = ObjectId(ticket_id)
+    except (InvalidId, TypeError):
+        return None, "not_found"
+
+    count_field = "customer_reply_count" if sender_role == "user" else "agent_reply_count"
+    now = datetime.now(timezone.utc)
+    reply = {"sender_role": sender_role, "message": message, "created_at": now}
+    query = {"_id": object_id, "$or": [
+        {count_field: {"$lt": 5}},
+        {count_field: {"$exists": False}},
+    ]}
+    updates = {
+        "$push": {"replies": reply},
+        "$inc": {count_field: 1},
+        "$set": {"last_reply_at": now, "last_reply_by": sender_role, "updated_at": now},
+    }
+    if sender_role == "user":
+        updates["$set"]["status"] = "Open"
+
+    updated = tickets_collection.find_one_and_update(
+        query, updates, return_document=ReturnDocument.AFTER
+    )
+    if updated is not None:
+        return serialize_ticket(updated), "ok"
+
+    if tickets_collection.find_one({"_id": object_id}, {"_id": 1}) is None:
+        return None, "not_found"
+    return None, "limit_reached"

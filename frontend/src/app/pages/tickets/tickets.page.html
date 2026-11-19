@@ -119,6 +119,9 @@
                   <span>
                     <strong>{{ ticket.title }}</strong>
                     <small>{{ shortId(ticket.id) }} <i>·</i> {{ ticket.description }}</small>
+                    @if (ticket.replies.length) {
+                      <span class="ticket-latest-reply">Latest reply · {{ ticket.last_reply_by === 'agent' ? 'Support' : 'Customer' }} · {{ ticket.last_reply_at | date:'MMM d, h:mm a' }}</span>
+                    }
                   </span>
                 </a>
               </td>

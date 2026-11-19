@@ -12,6 +12,8 @@ import {
   LucideClock3,
   LucideFileText,
   LucideLoaderCircle,
+  LucideMessageSquare,
+  LucideSend,
   LucideShieldCheck,
   LucideTag,
 } from '@lucide/angular';
@@ -34,6 +36,8 @@ import { TicketService } from '../../core/services/ticket.service';
     LucideClock3,
     LucideFileText,
     LucideLoaderCircle,
+    LucideMessageSquare,
+    LucideSend,
     LucideShieldCheck,
     LucideTag,
   ],
@@ -59,6 +63,11 @@ export class TicketDetailPage implements OnInit {
   readonly saveError = signal('');
   readonly saved = signal(false);
   readonly autoSaveMessage = signal('');
+  readonly replySending = signal(false);
+  readonly replyError = signal('');
+  readonly replyForm = this.formBuilder.nonNullable.group({
+    message: ['', [Validators.required, Validators.maxLength(2000)]],
+  });
 
   readonly agentForm = this.formBuilder.nonNullable.group({
     status: ['Open' as TicketStatus, Validators.required],
@@ -131,6 +140,50 @@ export class TicketDetailPage implements OnInit {
     });
   }
 
+  customerRepliesRemaining(): number {
+    return Math.max(0, 5 - (this.ticket()?.customer_reply_count ?? 0));
+  }
+
+  agentRepliesRemaining(): number {
+    return Math.max(0, 5 - (this.ticket()?.agent_reply_count ?? 0));
+  }
+
+  canSendReply(): boolean {
+    const current = this.ticket();
+    if (!current || this.replyForm.invalid || this.replySending()) return false;
+    return this.demoMode.role() === 'agent'
+      ? current.agent_reply_count < 5
+      : current.customer_reply_count < 5;
+  }
+
+  sendReply(): void {
+    const current = this.ticket();
+    if (!current || !this.canSendReply()) return;
+    const message = this.replyForm.controls.message.value.trim();
+    if (!message) return;
+
+    this.replySending.set(true);
+    this.replyError.set('');
+    this.ticketService.addReply(current.id, {
+      sender_role: this.demoMode.role(),
+      message,
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        if (this.ticket()?.id !== current.id) return;
+        this.ticket.set(updated);
+        this.replyForm.reset({ message: '' });
+        this.replySending.set(false);
+        this.agentForm.patchValue({ status: updated.status }, { emitEvent: false });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.replySending.set(false);
+        this.replyError.set(error.status === 409
+          ? 'You have reached the five-reply limit for this ticket.'
+          : 'Your reply could not be sent. Please check the connection and try again.');
+      },
+    });
+  }
+
   private wordCount(value: string): number {
     const trimmed = value.trim();
     return trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
@@ -156,6 +209,7 @@ export class TicketDetailPage implements OnInit {
       return;
     }
 
+    if (current.resolution_note) return;
     if (current.status === 'Resolved' && current.resolution_note === normalizedNote) return;
 
     this.saveError.set('');
@@ -208,7 +262,7 @@ export class TicketDetailPage implements OnInit {
     }
 
     const payload: UpdateTicketRequest = { status };
-    if (resolutionNote) payload.resolution_note = resolutionNote;
+    if (resolutionNote && !current.resolution_note) payload.resolution_note = resolutionNote;
 
     this.saving.set(true);
     this.ticketService.updateTicket(current.id, payload).pipe(

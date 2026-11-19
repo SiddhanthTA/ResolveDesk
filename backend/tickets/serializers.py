@@ -52,6 +52,12 @@ class TicketUpdateSerializer(serializers.Serializer):
 
 
 
+class TicketReplyResponseSerializer(serializers.Serializer):
+    sender_role = serializers.ChoiceField(choices=("user", "agent"))
+    message = serializers.CharField()
+    created_at = serializers.DateTimeField()
+
+
 class TicketResponseSerializer(serializers.Serializer):
     id = serializers.CharField()
     title = serializers.CharField()
@@ -61,6 +67,11 @@ class TicketResponseSerializer(serializers.Serializer):
     resolution_note = serializers.CharField(allow_null=True, allow_blank=True)
     created_at = serializers.DateTimeField()
     updated_at = serializers.DateTimeField()
+    replies = TicketReplyResponseSerializer(many=True)
+    customer_reply_count = serializers.IntegerField()
+    agent_reply_count = serializers.IntegerField()
+    last_reply_at = serializers.DateTimeField(allow_null=True)
+    last_reply_by = serializers.ChoiceField(choices=("user", "agent"), allow_null=True)
 
 
 class TicketListResponseSerializer(serializers.Serializer):

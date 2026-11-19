@@ -17,6 +17,7 @@ from .serializers import (
     SimilarTicketResponseSerializer,
     DeleteAllTicketsConfirmationSerializer,
     TicketReplyCreateSerializer,
+    TicketRatingCreateSerializer,
 )
 
 from .services.similarity_service import find_similar_resolved_tickets
@@ -306,6 +307,69 @@ class TicketReplyView(APIView):
                 return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
             if result == "limit_reached":
                 return Response({"detail": "This side has already used all five replies for this ticket."}, status=status.HTTP_409_CONFLICT)
+            if result == "not_your_turn":
+                return Response({"detail": "Please wait for the other side to reply before sending another message."}, status=status.HTTP_409_CONFLICT)
             return Response(ticket, status=status.HTTP_201_CREATED)
         except Exception:
             return Response({"detail": "Unable to add the reply right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+
+class TicketReopenView(APIView):
+    @extend_schema(
+        summary="Reopen a resolved ticket",
+        description="Reopens a resolved ticket, clears any customer rating, and starts a new follow-up conversation.",
+        request=None,
+        responses={200: TicketResponseSerializer, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT},
+    )
+    def post(self, request, ticket_id):
+        try:
+            ticket, result = ticket_repository.reopen_ticket(ticket_id)
+            if result == "not_found":
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result == "not_resolved":
+                return Response({"detail": "Only resolved tickets can be reopened."}, status=status.HTTP_409_CONFLICT)
+            return Response(ticket)
+        except Exception:
+            return Response({"detail": "Unable to reopen this ticket right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class TicketRatingView(APIView):
+    @extend_schema(
+        summary="Save customer satisfaction feedback",
+        request=TicketRatingCreateSerializer,
+        responses={200: TicketResponseSerializer, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT},
+    )
+    def post(self, request, ticket_id):
+        serializer = TicketRatingCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            ticket, result = ticket_repository.save_ticket_rating(
+                ticket_id,
+                serializer.validated_data["rating"],
+                serializer.validated_data["note"],
+            )
+            if result == "not_found":
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result == "not_resolved":
+                return Response({"detail": "Only resolved tickets can receive a rating."}, status=status.HTTP_409_CONFLICT)
+            return Response(ticket)
+        except Exception:
+            return Response({"detail": "Unable to save the rating right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class TicketRatingSeenView(APIView):
+    @extend_schema(
+        summary="Mark a customer rating as seen by an agent",
+        request=None,
+        responses={200: TicketResponseSerializer, 404: OpenApiTypes.OBJECT},
+    )
+    def post(self, request, ticket_id):
+        try:
+            ticket = ticket_repository.mark_ticket_rating_seen(ticket_id)
+            if ticket is None:
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(ticket)
+        except Exception:
+            return Response({"detail": "Unable to update the rating status right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

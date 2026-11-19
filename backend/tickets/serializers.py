@@ -72,6 +72,11 @@ class TicketResponseSerializer(serializers.Serializer):
     agent_reply_count = serializers.IntegerField()
     last_reply_at = serializers.DateTimeField(allow_null=True)
     last_reply_by = serializers.ChoiceField(choices=("user", "agent"), allow_null=True)
+    is_reopened = serializers.BooleanField()
+    rating = serializers.IntegerField(allow_null=True, min_value=1, max_value=5)
+    rating_note = serializers.CharField(allow_blank=True)
+    rating_created_at = serializers.DateTimeField(allow_null=True)
+    rating_seen_by_agent = serializers.BooleanField()
 
 
 class TicketListResponseSerializer(serializers.Serializer):
@@ -114,3 +119,13 @@ class TicketReplyCreateSerializer(serializers.Serializer):
         if not value:
             raise serializers.ValidationError("Reply cannot be empty.")
         return value
+
+
+
+class TicketReopenRequestSerializer(serializers.Serializer):
+    """The reopen action has no client-controlled fields."""
+
+
+class TicketRatingCreateSerializer(serializers.Serializer):
+    rating = serializers.IntegerField(min_value=1, max_value=5)
+    note = serializers.CharField(max_length=1000, required=False, allow_blank=True, default="")

@@ -19,8 +19,14 @@ def serialize_ticket(ticket):
     ticket.setdefault("agent_reply_count", 0)
     ticket.setdefault("last_reply_at", None)
     ticket.setdefault("last_reply_by", None)
-    if ticket.get("last_reply_at") is not None:
-        ticket["last_reply_at"] = ticket["last_reply_at"].isoformat()
+    ticket.setdefault("is_reopened", False)
+    ticket.setdefault("rating", None)
+    ticket.setdefault("rating_note", "")
+    ticket.setdefault("rating_created_at", None)
+    ticket.setdefault("rating_seen_by_agent", False)
+    for field in ("last_reply_at", "rating_created_at"):
+        if ticket.get(field) is not None:
+            ticket[field] = ticket[field].isoformat()
     for reply in ticket["replies"]:
         if reply.get("created_at") is not None:
             reply["created_at"] = reply["created_at"].isoformat()
@@ -76,6 +82,8 @@ def update_ticket(ticket_id, validated_data):
         **validated_data,
         "updated_at": datetime.now(timezone.utc),
     }
+    if update_data.get("status") == "Resolved":
+        update_data["is_reopened"] = False
 
     result = tickets_collection.update_one(
         {"_id": object_id},
@@ -120,10 +128,16 @@ def append_ticket_reply(ticket_id, sender_role, message):
     count_field = "customer_reply_count" if sender_role == "user" else "agent_reply_count"
     now = datetime.now(timezone.utc)
     reply = {"sender_role": sender_role, "message": message, "created_at": now}
-    query = {"_id": object_id, "$or": [
-        {count_field: {"$lt": 5}},
-        {count_field: {"$exists": False}},
-    ]}
+    query = {
+        "_id": object_id,
+        "$and": [
+            {"$or": [
+                {count_field: {"$lt": 5}},
+                {count_field: {"$exists": False}},
+            ]},
+            {"last_reply_by": {"$ne": sender_role}},
+        ],
+    }
     updates = {
         "$push": {"replies": reply},
         "$inc": {count_field: 1},
@@ -138,6 +152,81 @@ def append_ticket_reply(ticket_id, sender_role, message):
     if updated is not None:
         return serialize_ticket(updated), "ok"
 
-    if tickets_collection.find_one({"_id": object_id}, {"_id": 1}) is None:
+    existing = tickets_collection.find_one(
+        {"_id": object_id},
+        {"_id": 1, count_field: 1, "last_reply_by": 1},
+    )
+    if existing is None:
         return None, "not_found"
-    return None, "limit_reached"
+    if existing.get(count_field, 0) >= 5:
+        return None, "limit_reached"
+    if existing.get("last_reply_by") == sender_role:
+        return None, "not_your_turn"
+    return None, "not_updated"
+
+
+def reopen_ticket(ticket_id):
+    try:
+        object_id = ObjectId(ticket_id)
+    except (InvalidId, TypeError):
+        return None, "not_found"
+
+    now = datetime.now(timezone.utc)
+    updated = tickets_collection.find_one_and_update(
+        {"_id": object_id, "status": "Resolved"},
+        {"$set": {
+            "status": "Open",
+            "is_reopened": True,
+            "rating": None,
+            "rating_note": "",
+            "rating_created_at": None,
+            "rating_seen_by_agent": False,
+            "updated_at": now,
+        }},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updated is not None:
+        return serialize_ticket(updated), "ok"
+
+    existing = tickets_collection.find_one({"_id": object_id}, {"_id": 1})
+    if existing is None:
+        return None, "not_found"
+    return serialize_ticket(tickets_collection.find_one({"_id": object_id})), "not_resolved"
+
+
+def save_ticket_rating(ticket_id, rating, note):
+    try:
+        object_id = ObjectId(ticket_id)
+    except (InvalidId, TypeError):
+        return None, "not_found"
+
+    now = datetime.now(timezone.utc)
+    updated = tickets_collection.find_one_and_update(
+        {"_id": object_id, "status": "Resolved"},
+        {"$set": {
+            "rating": rating,
+            "rating_note": note,
+            "rating_created_at": now,
+            "rating_seen_by_agent": False,
+        }},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updated is not None:
+        return serialize_ticket(updated), "ok"
+
+    existing = tickets_collection.find_one({"_id": object_id}, {"_id": 1})
+    if existing is None:
+        return None, "not_found"
+    return None, "not_resolved"
+
+
+def mark_ticket_rating_seen(ticket_id):
+    try:
+        object_id = ObjectId(ticket_id)
+    except (InvalidId, TypeError):
+        return None
+    tickets_collection.update_one(
+        {"_id": object_id, "rating": {"$ne": None}},
+        {"$set": {"rating_seen_by_agent": True}},
+    )
+    return get_ticket_by_id(ticket_id)

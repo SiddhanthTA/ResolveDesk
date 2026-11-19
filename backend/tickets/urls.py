@@ -7,6 +7,9 @@ from .views import (
     SimilarTicketSuggestionsView,
     TicketDetailView,
     TicketReplyView,
+    TicketReopenView,
+    TicketRatingView,
+    TicketRatingSeenView,
     TicketListCreateView,
 )
 
@@ -18,5 +21,8 @@ urlpatterns = [
     path("tickets/", TicketListCreateView.as_view(), name="ticket-list-create"),
     path("tickets/similar/", SimilarTicketSuggestionsView.as_view(), name="similar-ticket-suggestions"),
     path("tickets/<str:ticket_id>/replies/", TicketReplyView.as_view(), name="ticket-replies"),
+    path("tickets/<str:ticket_id>/reopen/", TicketReopenView.as_view(), name="ticket-reopen"),
+    path("tickets/<str:ticket_id>/rating/", TicketRatingView.as_view(), name="ticket-rating"),
+    path("tickets/<str:ticket_id>/rating/seen/", TicketRatingSeenView.as_view(), name="ticket-rating-seen"),
     path("tickets/<str:ticket_id>/", TicketDetailView.as_view(), name="ticket-detail"),
 ]

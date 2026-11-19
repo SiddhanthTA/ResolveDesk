@@ -330,6 +330,8 @@ class TicketReopenView(APIView):
             ticket, result = ticket_repository.reopen_ticket(ticket_id)
             if result == "not_found":
                 return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result == "already_reopened":
+                return Response({"detail": "This ticket has already used its one allowed reopening."}, status=status.HTTP_409_CONFLICT)
             if result == "not_resolved":
                 return Response({"detail": "Only resolved tickets can be reopened."}, status=status.HTTP_409_CONFLICT)
             return Response(ticket)

@@ -11,8 +11,11 @@ ResolveDesk is a smart support desk prototype. People can report software issues
 - Let an agent move tickets between **Open**, **In Progress**, and **Resolved**.
 - Require a customer-friendly first resolution note before resolving a ticket.
 - Keep a separate conversation thread for customer and agent follow-up replies.
-- Allow up to five customer replies and five agent replies per ticket, enforced by the backend.
-- Automatically reopen a resolved ticket when the customer replies; preserve the original resolution note as history.
+- Allow up to five replies per side, with turn-taking enforced atomically by the backend.
+- Let customers explicitly reopen resolved tickets; preserve the previous resolution note and clear any old rating when reopening.
+- Collect optional one-to-five-star customer feedback with a short note, and flag new ratings for agents until the ticket is opened.
+- Show active Open and In Progress tickets first in both workspace overviews.
+- Show in-app notices for newly resolved tickets and new agent replies, with direct links to each ticket.
 - Highlight the latest reply in the conversation and ticket list.
 - Suggest up to three similar resolved tickets while a user is entering a new issue.
 - Allow ticket submission even when suggestions are unavailable or no close match is found.
@@ -193,7 +196,10 @@ Similarity scores are ranking signals, not probabilities or guarantees that a pr
 | POST | `/api/tickets/` | Create a ticket |
 | GET | `/api/tickets/{id}/` | Retrieve a ticket |
 | PATCH | `/api/tickets/{id}/` | Update status and/or the original resolution note |
-| POST | `/api/tickets/{id}/replies/` | Add a customer or agent conversation reply (five per role) |
+| POST | `/api/tickets/{id}/replies/` | Add a turn-based customer or agent conversation reply (five per role) |
+| POST | `/api/tickets/{id}/reopen/` | Reopen a resolved ticket and clear any previous rating |
+| POST | `/api/tickets/{id}/rating/` | Save or update optional customer feedback |
+| POST | `/api/tickets/{id}/rating/seen/` | Mark a customer rating as seen by an agent |
 | POST | `/api/tickets/similar/` | Suggest up to three similar resolved tickets |
 
 ## Frontend quality checks
@@ -233,15 +239,17 @@ ResolveDesk/
 ## Scope and limitations
 
 - The end-user/agent selector is a demonstration switch, not real authentication or authorization.
-- The project is intended for local demonstration; production deployment, authentication, notifications, and file uploads are outside the current scope.
+- The project is intended for local demonstration; production deployment, real authentication, email notifications, and file uploads are outside the current scope. The in-app notices are demo-session notifications.
 - The similarity model ranks resolved tickets but does not judge whether their resolution notes are correct or suitable for a new case. Follow-up replies are stored separately and are not sent to the similarity model. The original resolution note is preserved when a customer reopens a ticket.
 - The current similarity service calculates embeddings for the resolved ticket candidates during a request. For a larger production dataset, embeddings should be persisted and refreshed when ticket content changes.
 
 
 ### Ticket conversations
 
-Each ticket has a conversation separate from its original description and first resolution note. The customer and support agent can each send up to five replies. The backend enforces the limits atomically in MongoDB and returns HTTP 409 when one side has reached its limit.
+Each ticket has a conversation separate from its description and resolution note. The customer and support agent can each send up to five replies. They must take turns: the same side cannot send twice in a row, and the backend checks both the turn and the per-side limit atomically in MongoDB.
 
-A customer reply to a resolved ticket changes its status back to **Open**. When an agent opens that ticket, the existing workflow moves it to **In Progress**. Agent replies do not replace the original resolution note; the agent can change the status back to **Resolved** after the follow-up is handled. The conversation remains attached to the same ticket across these status changes.
+A customer reopens a resolved ticket with the **Re-Open Ticket** action. Reopening changes the status to **Open**, clears any previous customer rating, and keeps the resolution note and conversation history. When an agent opens an Open ticket, it moves to **In Progress**. Agents can change the status or resolution note explicitly from **Manage ticket**; after saving, the editor collapses behind **Edit Response**. Replies never overwrite the resolution note.
+
+After resolution, customers may optionally leave a one-to-five-star rating and a short note. New ratings are highlighted in the agent ticket list and marked as seen when the agent opens the ticket. The user sees in-app notices for new agent replies and completed resolutions when switching back from the agent demo session.
 
 The role value used by this feature belongs to the local demo role switcher. It is not an identity or authorization system. A production version must derive the sender role from an authenticated user rather than trusting a client-supplied role.

@@ -4,6 +4,7 @@ import {
   LucideCircleCheck,
   LucideClock3,
   LucideLayoutDashboard,
+  LucideMessageSquare,
   LucidePlus,
   LucideTicket,
 } from '@lucide/angular';
@@ -34,6 +35,7 @@ interface TicketNotice {
     LucideCircleCheck,
     LucideClock3,
     LucideLayoutDashboard,
+    LucideMessageSquare,
     LucidePlus,
     LucideTicket,
   ],

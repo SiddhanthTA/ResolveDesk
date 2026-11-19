@@ -64,6 +64,18 @@ export class TicketService {
     );
   }
 
+  requestClose(id: string): Observable<Ticket> {
+    return this.http.post<Ticket>(API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/close-request/', {});
+  }
+
+  resolveTicket(id: string): Observable<Ticket> {
+    return this.http.post<Ticket>(API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/resolve/', {});
+  }
+
+  forceResolveTicket(id: string): Observable<Ticket> {
+    return this.http.post<Ticket>(API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/force-resolve/', {});
+  }
+
   markRatingSeen(id: string): Observable<Ticket> {
     return this.http.post<Ticket>(
       API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/rating/seen/',

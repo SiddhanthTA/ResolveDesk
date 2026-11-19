@@ -103,3 +103,14 @@ class DeleteAllTicketsConfirmationSerializer(serializers.Serializer):
         choices=(("DELETE ALL TICKETS", "DELETE ALL TICKETS"),),
         help_text='Type exactly "DELETE ALL TICKETS" to confirm this destructive action.',
     )
+
+
+
+class TicketReplyCreateSerializer(serializers.Serializer):
+    sender_role = serializers.ChoiceField(choices=(("user", "user"), ("agent", "agent")))
+    message = serializers.CharField(max_length=2000, trim_whitespace=True)
+
+    def validate_message(self, value):
+        if not value:
+            raise serializers.ValidationError("Reply cannot be empty.")
+        return value

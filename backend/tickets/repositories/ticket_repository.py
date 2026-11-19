@@ -26,6 +26,11 @@ def serialize_ticket(ticket):
     ticket.setdefault("rating_note", "")
     ticket.setdefault("rating_created_at", None)
     ticket.setdefault("rating_seen_by_agent", False)
+    ticket.setdefault("close_requested", False)
+    ticket.setdefault("close_requested_at", None)
+    ticket.setdefault("resolution_type", None)
+    if ticket.get("close_requested_at") is not None:
+        ticket["close_requested_at"] = ticket["close_requested_at"].isoformat()
     for field in ("last_reply_at", "rating_created_at"):
         if ticket.get(field) is not None:
             ticket[field] = ticket[field].isoformat()
@@ -85,7 +90,8 @@ def update_ticket(ticket_id, validated_data):
         "updated_at": datetime.now(timezone.utc),
     }
     if update_data.get("status") == "Resolved":
-        update_data["is_reopened"] = False
+        update_data["resolution_type"] = "agent"
+        update_data["close_requested"] = False
 
     result = tickets_collection.update_one(
         {"_id": object_id},
@@ -186,11 +192,13 @@ def reopen_ticket(ticket_id):
 
     now = datetime.now(timezone.utc)
     updated = tickets_collection.find_one_and_update(
-        {"_id": object_id, "status": "Resolved"},
+        {"_id": object_id, "status": "Resolved", "is_reopened": {"$ne": True}},
         {"$set": {
             "status": "Open",
             "is_reopened": True,
             "conversation_unlocked": True,
+            "close_requested": False,
+            "resolution_type": None,
             "next_reply_by": "user",
             "rating": None,
             "rating_note": "",
@@ -203,10 +211,61 @@ def reopen_ticket(ticket_id):
     if updated is not None:
         return serialize_ticket(updated), "ok"
 
-    existing = tickets_collection.find_one({"_id": object_id}, {"_id": 1})
+    existing = tickets_collection.find_one({"_id": object_id})
     if existing is None:
         return None, "not_found"
-    return serialize_ticket(tickets_collection.find_one({"_id": object_id})), "not_resolved"
+    return serialize_ticket(existing), "already_reopened" if existing.get("is_reopened") else "not_resolved"
+
+
+def request_ticket_close(ticket_id):
+    try:
+        object_id = ObjectId(ticket_id)
+    except (InvalidId, TypeError):
+        return None, "not_found"
+    now = datetime.now(timezone.utc)
+    updated = tickets_collection.find_one_and_update(
+        {"_id": object_id, "status": {"$ne": "Resolved"}, "close_requested": {"$ne": True}},
+        {"$set": {"close_requested": True, "close_requested_at": now, "updated_at": now}},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updated is not None:
+        return serialize_ticket(updated), "ok"
+    existing = tickets_collection.find_one({"_id": object_id})
+    if existing is None:
+        return None, "not_found"
+    if existing.get("status") == "Resolved":
+        return None, "resolved"
+    return serialize_ticket(existing), "already_requested"
+
+
+def resolve_ticket(ticket_id, force=False):
+    try:
+        object_id = ObjectId(ticket_id)
+    except (InvalidId, TypeError):
+        return None, "not_found"
+    now = datetime.now(timezone.utc)
+    resolution_type = "force" if force else "agent"
+    query = {"_id": object_id, "status": {"$ne": "Resolved"}}
+    if not force:
+        query["close_requested"] = True
+    note = "This ticket was force closed by the support agent." if force else "The support team has marked this ticket as resolved."
+    updated = tickets_collection.find_one_and_update(
+        query,
+        {"$set": {
+            "status": "Resolved",
+            "resolution_note": note,
+            "resolution_type": resolution_type,
+            "close_requested": False,
+            "updated_at": now,
+        }},
+        return_document=ReturnDocument.AFTER,
+    )
+    if updated is not None:
+        return serialize_ticket(updated), "ok"
+    existing = tickets_collection.find_one({"_id": object_id})
+    if existing is None:
+        return None, "not_found"
+    return None, "not_requested" if not force and existing.get("status") != "Resolved" else "resolved"
 
 
 def save_ticket_rating(ticket_id, rating, note):

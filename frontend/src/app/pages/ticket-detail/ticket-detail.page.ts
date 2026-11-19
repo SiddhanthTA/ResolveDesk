@@ -71,6 +71,11 @@ export class TicketDetailPage implements OnInit {
   readonly ratingError = signal('');
   readonly ratingSaved = signal(false);
   readonly selectedRating = signal(0);
+  readonly repliesExpanded = signal(false);
+  readonly closeRequestSending = signal(false);
+  readonly resolutionActionSending = signal(false);
+  readonly closeRequestError = signal('');
+  readonly resolutionActionError = signal('');
 
   readonly replyForm = this.formBuilder.nonNullable.group({
     message: ['', [Validators.required, Validators.maxLength(2000)]],
@@ -113,7 +118,7 @@ export class TicketDetailPage implements OnInit {
         resolution_note: ticket.resolution_note ?? '',
       }, { emitEvent: false });
       this.agentForm.markAsPristine();
-      this.managementExpanded.set(this.demoMode.role() === 'agent' && (!ticket.resolution_note || ticket.is_reopened));
+      this.managementExpanded.set(this.demoMode.role() === 'agent' && !ticket.is_reopened && !ticket.resolution_note);
       this.saved.set(false);
       this.saveError.set('');
       this.selectedRating.set(ticket.rating ?? 0);
@@ -122,6 +127,9 @@ export class TicketDetailPage implements OnInit {
       this.ratingSaved.set(false);
       this.reopenError.set('');
       this.replyError.set('');
+      this.repliesExpanded.set(false);
+      this.closeRequestError.set('');
+      this.resolutionActionError.set('');
 
       if (this.demoMode.role() === 'agent' && ticket.rating !== null && !ticket.rating_seen_by_agent) {
         this.markRatingAsSeen(ticket);
@@ -228,7 +236,7 @@ export class TicketDetailPage implements OnInit {
 
   reopenTicket(): void {
     const current = this.ticket();
-    if (!current || current.status !== 'Resolved' || this.reopening()) return;
+    if (!current || current.status !== 'Resolved' || current.is_reopened || this.reopening()) return;
     this.reopening.set(true);
     this.reopenError.set('');
     this.ticketService.reopenTicket(current.id).pipe(
@@ -246,10 +254,46 @@ export class TicketDetailPage implements OnInit {
       error: (error: HttpErrorResponse) => {
         this.reopening.set(false);
         this.reopenError.set(error.status === 409
-          ? 'This ticket is no longer resolved. Refresh the page to see its latest status.'
+          ? (error.error?.detail?.includes('already') ? 'This ticket has already used its one allowed reopening.' : 'This ticket is no longer resolved. Refresh the page to see its latest status.')
           : 'The ticket could not be reopened. Please try again.');
       },
     });
+  }
+
+
+  requestClose(): void {
+    const current = this.ticket();
+    if (!current || current.status === 'Resolved' || current.close_requested || this.closeRequestSending()) return;
+    this.closeRequestSending.set(true);
+    this.closeRequestError.set('');
+    this.ticketService.requestClose(current.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => { this.ticket.set(updated); this.closeRequestSending.set(false); },
+      error: () => { this.closeRequestSending.set(false); this.closeRequestError.set('Your close request could not be sent. Please try again.'); },
+    });
+  }
+
+  resolveTicket(force: boolean): void {
+    const current = this.ticket();
+    if (!current || current.status === 'Resolved' || this.resolutionActionSending()) return;
+    this.resolutionActionSending.set(true);
+    this.resolutionActionError.set('');
+    const action = force ? this.ticketService.forceResolveTicket(current.id) : this.ticketService.resolveTicket(current.id);
+    action.pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        this.ticket.set(updated);
+        this.resolutionActionSending.set(false);
+        this.managementExpanded.set(false);
+        this.agentForm.patchValue({ status: updated.status, resolution_note: updated.resolution_note ?? '' }, { emitEvent: false });
+      },
+      error: () => {
+        this.resolutionActionSending.set(false);
+        this.resolutionActionError.set('The ticket could not be resolved. Refresh the page and try again.');
+      },
+    });
+  }
+
+  toggleReplies(): void {
+    this.repliesExpanded.update((expanded) => !expanded);
   }
 
   selectRating(rating: number): void {

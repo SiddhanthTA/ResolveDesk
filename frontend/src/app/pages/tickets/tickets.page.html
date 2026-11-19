@@ -117,8 +117,11 @@
                 >
                   <span class="ticket-mini-icon">{{ ticket.category === 'Billing' ? '$' : ticket.category === 'Account' ? 'A' : ticket.category === 'Technical' ? 'T' : 'G' }}</span>
                   <span>
-                    <strong>{{ ticket.title }}</strong>
+                    <strong>{{ demoMode.role() === 'agent' && ticket.is_reopened ? 'Re-Opened Ticket - ' : '' }}{{ ticket.title }}</strong>
                     <small>{{ shortId(ticket.id) }} <i>·</i> {{ ticket.description }}</small>
+                    @if (demoMode.role() === 'agent' && ticket.rating !== null && !ticket.rating_seen_by_agent) {
+                      <span class="ticket-new-rating">NEW RATING RECEIVED · {{ ticket.rating }}/5</span>
+                    }
                     @if (ticket.replies.length) {
                       <span class="ticket-latest-reply">Latest reply · {{ ticket.last_reply_by === 'agent' ? 'Support' : 'Customer' }} · {{ ticket.last_reply_at | date:'MMM d, h:mm a' }}</span>
                     }

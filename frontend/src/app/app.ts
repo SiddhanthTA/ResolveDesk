@@ -19,7 +19,7 @@ interface TourStep {
   target: string;
 }
 
-interface ResolutionNotice {
+interface TicketNotice {
   tickets: Ticket[];
   total: number;
 }
@@ -46,7 +46,8 @@ export class App {
   private readonly ticketService = inject(TicketService);
   private agentSessionStartedAt: number | null = null;
 
-  readonly resolutionNotice = signal<ResolutionNotice | null>(null);
+  readonly resolutionNotice = signal<TicketNotice | null>(null);
+  readonly replyNotice = signal<TicketNotice | null>(null);
   readonly tourOpen = signal(false);
   readonly tourStep = signal(0);
   readonly spotlight = signal({ left: 0, top: 0, width: 0, height: 0 });
@@ -97,6 +98,7 @@ export class App {
     if (previousRole === 'user' && role === 'agent') {
       this.agentSessionStartedAt = Date.now();
       this.resolutionNotice.set(null);
+      this.replyNotice.set(null);
     }
 
     this.demoMode.setRole(role);
@@ -106,31 +108,43 @@ export class App {
     if (previousRole === 'agent' && role === 'user' && this.agentSessionStartedAt !== null) {
       const sessionStartedAt = this.agentSessionStartedAt;
       this.agentSessionStartedAt = null;
-      this.loadResolutionNotice(sessionStartedAt);
+      this.loadSupportNotices(sessionStartedAt);
     }
   }
 
-  private loadResolutionNotice(sessionStartedAt: number): void {
-    this.ticketService.getTickets({ status: 'Resolved' }).subscribe({
+  private loadSupportNotices(sessionStartedAt: number): void {
+    this.ticketService.getTickets().subscribe({
       next: (response) => {
         if (this.demoMode.role() !== 'user') return;
 
         const newlyResolved = response.results
-          .filter((ticket) => Date.parse(ticket.updated_at) >= sessionStartedAt)
+          .filter((ticket) => ticket.status === 'Resolved' && Date.parse(ticket.updated_at) >= sessionStartedAt)
           .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
 
-        if (newlyResolved.length) {
-          this.resolutionNotice.set({
-            tickets: newlyResolved.slice(0, 2),
-            total: newlyResolved.length,
-          });
-        }
+        const newAgentReplies = response.results
+          .filter((ticket) => ticket.last_reply_by === 'agent' && !!ticket.last_reply_at
+            && Date.parse(ticket.last_reply_at) >= sessionStartedAt)
+          .sort((a, b) => Date.parse(b.last_reply_at ?? '') - Date.parse(a.last_reply_at ?? ''));
+
+        this.resolutionNotice.set(newlyResolved.length ? {
+          tickets: newlyResolved.slice(0, 3),
+          total: newlyResolved.length,
+        } : null);
+
+        this.replyNotice.set(newAgentReplies.length ? {
+          tickets: newAgentReplies.slice(0, 3),
+          total: newAgentReplies.length,
+        } : null);
       },
     });
   }
 
   dismissResolutionNotice(): void {
     this.resolutionNotice.set(null);
+  }
+
+  dismissReplyNotice(): void {
+    this.replyNotice.set(null);
   }
 
   startTour(): void {

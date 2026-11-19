@@ -11,7 +11,8 @@ export class DashboardPage implements OnInit {
  readonly demoMode=inject(DemoModeService);
  readonly tickets=signal<Ticket[]>([]);readonly loading=signal(true);readonly error=signal('');
  readonly total=computed(()=>this.tickets().length);readonly openCount=computed(()=>this.countByStatus('Open'));readonly progressCount=computed(()=>this.countByStatus('In Progress'));readonly resolvedCount=computed(()=>this.countByStatus('Resolved'));
- readonly recentTickets=computed(()=>this.demoMode.role()==='agent'?this.tickets().filter(t=>t.status==='Open').slice(0,6):this.tickets().slice(0,5));
+ readonly activeCount=computed(()=>this.openCount()+this.progressCount());
+ readonly recentTickets=computed(()=>this.tickets().filter(t=>t.status==='Open'||t.status==='In Progress').sort((a,b)=>Date.parse(b.updated_at)-Date.parse(a.updated_at)).slice(0,this.demoMode.role()==='agent'?6:5));
  ngOnInit():void{this.refresh();}
  refresh():void{this.loading.set(true);this.error.set('');this.ticketService.getTickets().subscribe({next:r=>{this.tickets.set(r.results);this.loading.set(false);},error:()=>{this.error.set('We could not load tickets. Check that the API and MongoDB are running, then try again.');this.loading.set(false);}});}
  countByStatus(status:TicketStatus):number{return this.tickets().filter(t=>t.status===status).length;}

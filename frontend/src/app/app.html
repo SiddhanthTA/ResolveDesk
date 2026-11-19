@@ -84,13 +84,36 @@
     <p class="resolution-notice-copy">The support team completed these requests:</p>
     <ul>
       @for (ticket of notice.tickets; track ticket.id) {
-        <li>{{ ticket.title }}</li>
+        <li><a [routerLink]="['/tickets', ticket.id]" (click)="dismissResolutionNotice()">{{ ticket.title }}</a></li>
       }
     </ul>
     @if (notice.total > notice.tickets.length) {
       <p class="resolution-notice-more">And {{ notice.total - notice.tickets.length }} more ticket{{ notice.total - notice.tickets.length === 1 ? '' : 's' }} resolved.</p>
     }
-    <a class="resolution-notice-link" routerLink="/tickets/resolved" (click)="dismissResolutionNotice()">View resolved tickets <span>→</span></a>
+    @if (notice.total > notice.tickets.length) {
+      <a class="resolution-notice-link" routerLink="/tickets/resolved" (click)="dismissResolutionNotice()">View all resolved tickets <span>→</span></a>
+    }
+  </section>
+}
+
+
+@if (replyNotice(); as notice) {
+  <section class="resolution-notice reply-notice" role="status" aria-live="polite" aria-labelledby="reply-notice-title">
+    <div class="resolution-notice-top">
+      <span class="resolution-notice-icon"><svg lucideMessageSquare></svg></span>
+      <button class="resolution-notice-close" type="button" aria-label="Dismiss notification" (click)="dismissReplyNotice()">×</button>
+    </div>
+    <span class="resolution-notice-kicker">NEW SUPPORT REPLY</span>
+    <h2 id="reply-notice-title">{{ notice.total === 1 ? 'New reply to your ticket' : 'New replies to your tickets' }}</h2>
+    <p class="resolution-notice-copy">The support team has responded:</p>
+    <ul>
+      @for (ticket of notice.tickets; track ticket.id) {
+        <li><a [routerLink]="['/tickets', ticket.id]" (click)="dismissReplyNotice()">{{ ticket.is_reopened ? 'Re-Opened Ticket - ' : '' }}{{ ticket.title }}</a></li>
+      }
+    </ul>
+    @if (notice.total > notice.tickets.length) {
+      <p class="resolution-notice-more">{{ notice.total - notice.tickets.length }} more ticket{{ notice.total - notice.tickets.length === 1 ? '' : 's' }} received a reply.</p>
+    }
   </section>
 }
 

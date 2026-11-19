@@ -82,7 +82,7 @@
         }
       }
 
-      @if (demoMode.role() === 'agent' || current.status !== 'Resolved' || current.conversation_unlocked) {
+      @if (current.is_reopened) {
         <section class="content-card conversation-card">
           <div class="content-card-heading">
             <span class="card-icon conversation-icon"><svg lucideMessageSquare></svg></span>
@@ -129,7 +129,7 @@
         </section>
       }
 
-      @if (demoMode.role() === 'user' && current.status !== 'Resolved') {
+      @if (demoMode.role() === 'user' && current.status !== 'Resolved' && current.is_reopened) {
         <section class="reopen-card">
           <div><strong>Is your issue resolved?</strong><p>Send a closure request to the support agent. They will review it before closing the ticket.</p></div>
           @if (current.close_requested) {

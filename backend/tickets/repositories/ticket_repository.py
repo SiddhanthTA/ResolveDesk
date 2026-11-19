@@ -248,7 +248,10 @@ def resolve_ticket(ticket_id, force=False):
     query = {"_id": object_id, "status": {"$ne": "Resolved"}}
     if not force:
         query["close_requested"] = True
-    note = "This ticket was force closed by the support agent." if force else "The support team has marked this ticket as resolved."
+    existing_ticket = tickets_collection.find_one({"_id": object_id})
+    if existing_ticket is None:
+        return None, "not_found"
+    note = "This ticket was force closed by the support agent." if force else (existing_ticket.get("resolution_note") or "The support team has marked this ticket as resolved.")
     updated = tickets_collection.find_one_and_update(
         query,
         {"$set": {

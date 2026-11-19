@@ -286,8 +286,9 @@ class TicketReplyView(APIView):
         summary="Add a customer or agent reply to a ticket",
         description=(
             "Adds a message to the ticket conversation. Each demo role may send up to "
-            "five replies per ticket. A customer reply automatically reopens a resolved "
-            "ticket. Replies never overwrite the original resolution note. The sender "
+            "five replies per ticket and must take turns. A customer must explicitly "
+            "reopen a resolved ticket before replying. Replies never overwrite the original "
+            "resolution note. The sender "
             "role is part of this demo API and is not authentication."
         ),
         request=TicketReplyCreateSerializer,
@@ -309,6 +310,8 @@ class TicketReplyView(APIView):
                 return Response({"detail": "This side has already used all five replies for this ticket."}, status=status.HTTP_409_CONFLICT)
             if result == "not_your_turn":
                 return Response({"detail": "Please wait for the other side to reply before sending another message."}, status=status.HTTP_409_CONFLICT)
+            if result == "ticket_resolved":
+                return Response({"detail": "Reopen this ticket before sending another reply."}, status=status.HTTP_409_CONFLICT)
             return Response(ticket, status=status.HTTP_201_CREATED)
         except Exception:
             return Response({"detail": "Unable to add the reply right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

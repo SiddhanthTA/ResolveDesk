@@ -130,6 +130,7 @@ def append_ticket_reply(ticket_id, sender_role, message):
     reply = {"sender_role": sender_role, "message": message, "created_at": now}
     query = {
         "_id": object_id,
+        "status": {"$ne": "Resolved"},
         "$and": [
             {"$or": [
                 {count_field: {"$lt": 5}},
@@ -143,9 +144,6 @@ def append_ticket_reply(ticket_id, sender_role, message):
         "$inc": {count_field: 1},
         "$set": {"last_reply_at": now, "last_reply_by": sender_role, "updated_at": now},
     }
-    if sender_role == "user":
-        updates["$set"]["status"] = "Open"
-
     updated = tickets_collection.find_one_and_update(
         query, updates, return_document=ReturnDocument.AFTER
     )
@@ -154,10 +152,12 @@ def append_ticket_reply(ticket_id, sender_role, message):
 
     existing = tickets_collection.find_one(
         {"_id": object_id},
-        {"_id": 1, count_field: 1, "last_reply_by": 1},
+        {"_id": 1, "status": 1, count_field: 1, "last_reply_by": 1},
     )
     if existing is None:
         return None, "not_found"
+    if existing.get("status") == "Resolved":
+        return None, "ticket_resolved"
     if existing.get(count_field, 0) >= 5:
         return None, "limit_reached"
     if existing.get("last_reply_by") == sender_role:

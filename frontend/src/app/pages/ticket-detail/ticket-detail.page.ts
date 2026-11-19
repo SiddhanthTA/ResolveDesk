@@ -136,6 +136,10 @@ export class TicketDetailPage implements OnInit {
     return trimmed ? trimmed.split(/\s+/).filter(Boolean).length : 0;
   }
 
+  resolutionNoteWordCount(): number {
+    return this.wordCount(this.agentForm.controls.resolution_note.value);
+  }
+
   private autoSaveResolutionNote(note: string): void {
     const normalizedNote = note.trim();
     if (this.wordCount(normalizedNote) < 2) {

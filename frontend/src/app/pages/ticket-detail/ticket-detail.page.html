@@ -13,7 +13,10 @@
   <div class="detail-heading">
     <div>
       <div class="ticket-breadcrumb"><span>ALL TICKETS</span><i>/</i><strong>{{ shortId(current.id) }}</strong></div>
-      <div class="detail-title-row"><h1>{{ current.title }}</h1><span class="status-pill" [class]="statusClass(current.status)">{{ current.status }}</span></div>
+      <div class="detail-title-row">
+        <h1>{{ demoMode.role() === 'agent' && current.is_reopened ? 'Re-Opened Ticket - ' : '' }}{{ current.title }}</h1>
+        <span class="status-pill" [class]="statusClass(current.status)">{{ current.status }}</span>
+      </div>
       <p class="detail-subtitle">Created {{ current.created_at | date:'MMMM d, y · h:mm a' }}</p>
     </div>
     <span class="category-chip"><svg lucideTag></svg>{{ current.category }}</span>
@@ -27,64 +30,6 @@
         <div class="issue-footer"><span>{{ current.description.length }} characters</span><span>Last updated {{ current.updated_at | date:'MMM d, y · h:mm a' }}</span></div>
       </section>
 
-      <section class="content-card conversation-card">
-        <div class="content-card-heading">
-          <span class="card-icon conversation-icon"><svg lucideMessageSquare></svg></span>
-          <div>
-            <span class="section-kicker">TICKET CONVERSATION</span>
-            <h2>Replies</h2>
-          </div>
-          <span class="reply-count">
-            {{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} of 5 left
-          </span>
-        </div>
-
-        @if (current.replies.length) {
-          <div class="conversation-thread" aria-live="polite">
-            @for (reply of current.replies; track $index; let last = $last) {
-              <article
-                class="conversation-message"
-                [class.customer-message]="reply.sender_role === 'user'"
-                [class.agent-message]="reply.sender_role === 'agent'"
-                [class.latest-message]="last"
-              >
-                <div class="message-meta">
-                  <strong>{{ reply.sender_role === 'agent' ? 'Support team' : 'You / Customer' }}</strong>
-                  <span>{{ reply.created_at | date:'MMM d, y · h:mm a' }}</span>
-                  @if (last) { <span class="latest-reply-badge">LATEST REPLY</span> }
-                </div>
-                <p>{{ reply.message }}</p>
-              </article>
-            }
-          </div>
-        } @else {
-          <p class="conversation-empty">No replies yet. Use this conversation to follow up with the support team.</p>
-        }
-
-        @if ((demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining()) > 0) {
-          <form class="reply-form" [formGroup]="replyForm" (ngSubmit)="sendReply()">
-            <label for="ticket-reply">{{ demoMode.role() === 'agent' ? 'Reply to customer' : 'Send a reply' }}</label>
-            <textarea
-              id="ticket-reply"
-              rows="3"
-              maxlength="2000"
-              formControlName="message"
-              [placeholder]="demoMode.role() === 'agent' ? 'Write an update for the customer...' : 'Add more information or ask a follow-up question...'"
-            ></textarea>
-            @if (replyError()) { <small class="field-error" role="alert">{{ replyError() }}</small> }
-            <div class="reply-form-footer">
-              <span>{{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} replies remaining</span>
-              <button class="button button-primary" type="submit" [disabled]="!canSendReply()">
-                @if (replySending()) { <svg class="spin" lucideLoaderCircle></svg> Sending... }
-                @else { <svg lucideSend></svg> Send reply }
-              </button>
-            </div>
-          </form>
-        } @else {
-          <p class="reply-limit-note">You've used all five replies available for this ticket.</p>
-        }
-      </section>
-
       @if (current.resolution_note) {
         <section class="content-card resolution-card">
           <div class="content-card-heading"><span class="card-icon resolution-icon"><svg lucideShieldCheck></svg></span><div><span class="section-kicker">SUPPORT RESPONSE</span><h2>Resolution note</h2></div><span class="resolved-label"><i></i> {{ current.status === 'Resolved' ? 'RESOLVED' : 'PREVIOUS RESOLUTION' }}</span></div>
@@ -94,6 +39,88 @@
         <section class="pending-card">
           <div class="pending-icon"><svg lucideClock3></svg></div>
           <div><strong>{{ current.status === 'In Progress' ? 'Your issue is being worked on' : 'This ticket is waiting for attention' }}</strong><p>{{ current.status === 'In Progress' ? 'A support agent is currently looking into this issue.' : 'A support agent will review the details and update the ticket.' }}</p></div>
+        </section>
+      }
+
+      @if (demoMode.role() === 'user' && current.status === 'Resolved') {
+        <section class="content-card rating-card">
+          <div class="content-card-heading">
+            <span class="card-icon rating-icon">★</span>
+            <div><span class="section-kicker">CUSTOMER FEEDBACK</span><h2>How was your support experience?</h2></div>
+            <span class="optional-label">OPTIONAL</span>
+          </div>
+          <form [formGroup]="ratingForm" (ngSubmit)="saveRating()" class="rating-form">
+            <div class="rating-stars" role="group" aria-label="Choose a rating from one to five stars">
+              @for (star of [1, 2, 3, 4, 5]; track star) {
+                <button type="button" class="rating-star" [class.selected]="star <= selectedRating()" [attr.aria-label]="star + ' out of 5 stars'" [attr.aria-pressed]="selectedRating() === star" (click)="selectRating(star)">★</button>
+              }
+              @if (selectedRating() > 0) { <span class="rating-value">{{ selectedRating() }} / 5</span> }
+            </div>
+            <label for="rating-note">A short note (optional)</label>
+            <textarea id="rating-note" rows="3" maxlength="1000" formControlName="note" placeholder="Tell us what went well or what we could improve..."></textarea>
+            @if (ratingError()) { <small class="field-error" role="alert">{{ ratingError() }}</small> }
+            <div class="rating-footer">
+              <span>{{ current.rating ? 'You can update your feedback while this ticket remains resolved.' : 'Your feedback is optional and helps us improve.' }}</span>
+              <button class="button button-primary" type="submit" [disabled]="selectedRating() === 0 || ratingSaving()">
+                @if (ratingSaving()) { <svg class="spin" lucideLoaderCircle></svg> Saving... }
+                @else { {{ current.rating ? 'Update rating' : 'Submit rating' }} }
+              </button>
+            </div>
+            @if (ratingSaved()) { <small class="rating-success"><svg lucideCheck></svg> Thank you. Your feedback has been saved.</small> }
+          </form>
+        </section>
+
+        <section class="reopen-card">
+          <div><strong>Still need help with this issue?</strong><p>Reopen the ticket to continue the conversation with the support team.</p></div>
+          <button class="button button-primary" type="button" (click)="reopenTicket()" [disabled]="reopening()">
+            @if (reopening()) { <svg class="spin" lucideLoaderCircle></svg> Reopening... }
+            @else { Re-Open Ticket }
+          </button>
+          @if (reopenError()) { <small class="field-error" role="alert">{{ reopenError() }}</small> }
+        </section>
+      }
+
+      @if (demoMode.role() === 'agent' || current.status !== 'Resolved' || current.is_reopened) {
+        <section class="content-card conversation-card">
+          <div class="content-card-heading">
+            <span class="card-icon conversation-icon"><svg lucideMessageSquare></svg></span>
+            <div><span class="section-kicker">TICKET CONVERSATION</span><h2>Replies</h2></div>
+            <span class="reply-count">{{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} of 5 left</span>
+          </div>
+
+          @if (current.replies.length) {
+            <div class="conversation-thread" aria-live="polite">
+              @for (reply of current.replies; track $index; let last = $last) {
+                <article class="conversation-message" [class.customer-message]="reply.sender_role === 'user'" [class.agent-message]="reply.sender_role === 'agent'" [class.latest-message]="last">
+                  <div class="message-meta">
+                    <strong>{{ reply.sender_role === 'agent' ? 'Support team' : 'You / Customer' }}</strong>
+                    <span>{{ reply.created_at | date:'MMM d, y · h:mm a' }}</span>
+                    @if (last) { <span class="latest-reply-badge">LATEST REPLY</span> }
+                  </div>
+                  <p>{{ reply.message }}</p>
+                </article>
+              }
+            </div>
+          } @else {
+            <p class="conversation-empty">No replies yet. Use this conversation to follow up with the support team.</p>
+          }
+
+          @if (current.status !== 'Resolved' && (demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining()) > 0 && isMyTurn()) {
+            <form class="reply-form" [formGroup]="replyForm" (ngSubmit)="sendReply()">
+              <label for="ticket-reply">{{ demoMode.role() === 'agent' ? 'Reply to customer' : 'Send a reply' }}</label>
+              <textarea id="ticket-reply" rows="3" maxlength="2000" formControlName="message" [placeholder]="demoMode.role() === 'agent' ? 'Write an update for the customer...' : 'Add more information or ask a follow-up question...'"></textarea>
+              @if (replyError()) { <small class="field-error" role="alert">{{ replyError() }}</small> }
+              <div class="reply-form-footer">
+                <span>{{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} replies remaining</span>
+                <button class="button button-primary" type="submit" [disabled]="!canSendReply()">
+                  @if (replySending()) { <svg class="spin" lucideLoaderCircle></svg> Sending... }
+                  @else { <svg lucideSend></svg> Send reply }
+                </button>
+              </div>
+            </form>
+          } @else if (current.status !== 'Resolved') {
+            <p class="reply-turn-note">{{ replyWaitMessage() }}</p>
+          }
         </section>
       }
     </div>
@@ -109,31 +136,47 @@
       </section>
 
       @if (demoMode.role() === 'agent') {
+        @if (current.rating !== null) {
+          <section class="content-card agent-rating-card">
+            <div class="content-card-heading"><span class="card-icon rating-icon">★</span><div><span class="section-kicker">CUSTOMER FEEDBACK</span><h2>Customer rating</h2></div></div>
+            <div class="agent-rating-stars"><strong>{{ current.rating }} / 5</strong><span>{{ '★'.repeat(current.rating) }}</span></div>
+            @if (current.rating_note) { <p class="agent-rating-note">{{ current.rating_note }}</p> }
+            @if (!current.rating_seen_by_agent) { <span class="new-rating-label">NEW RATING RECEIVED</span> }
+          </section>
+        }
         <section class="content-card agent-card">
-          <div class="agent-heading"><div class="agent-heading-icon"><svg lucideShieldCheck></svg></div><div><span class="section-kicker">AGENT WORKSPACE</span><h2>Manage ticket</h2></div></div>
-          <p class="agent-intro">Opening an Open ticket moves it to In Progress automatically. Add a resolution note to complete the request.</p>
-          <form [formGroup]="agentForm" (ngSubmit)="saveUpdate()" novalidate>
-            <label for="agent-status">Ticket status</label>
-            <select id="agent-status" formControlName="status">
-              @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
-            </select>
-            @if (autoStatusUpdating()) {
-              <small class="field-hint">Updating this ticket to In Progress…</small>
-            }
-            <label for="agent-resolution">Resolution note @if (agentForm.controls.status.value === 'Resolved') { <span>*</span> }</label>
-            <textarea id="agent-resolution" rows="5" formControlName="resolution_note" maxlength="5000" placeholder="Summarize what was done to resolve the issue..."></textarea>
-            <small class="field-hint">After at least two words, the note is saved automatically and the ticket becomes Resolved. You can keep editing the note; changes are saved after you pause typing.</small>
-            @if (agentForm.controls.status.value === 'Resolved' && resolutionNoteWordCount() < 2 && agentForm.controls.resolution_note.touched) {
-              <small class="field-error">A resolution note with at least two words is required.</small>
-            }
-            @if (autoSaveMessage()) { <div class="auto-save-hint" role="status">{{ autoSaveMessage() }}</div> }
-            @if (saveError()) { <div class="save-error" role="alert">{{ saveError() }}</div> }
-            @if (saved()) { <div class="save-success"><svg lucideCheck></svg> Changes saved successfully.</div> }
-            <button class="button button-primary save-button" type="submit" [disabled]="saving() || autoStatusUpdating()">
-              @if (saving()) { <svg class="spin" lucideLoaderCircle></svg> Saving... }
-              @else { Save changes }
-            </button>
-          </form>
+          @if (!managementExpanded()) {
+            <div class="agent-collapsed-heading">
+              <div class="agent-heading"><div class="agent-heading-icon"><svg lucideShieldCheck></svg></div><div><span class="section-kicker">AGENT WORKSPACE</span><h2>Manage ticket</h2></div></div>
+              <p class="agent-intro">Your response is saved. Open the editor to change the ticket status or resolution note.</p>
+              @if (saved()) { <div class="save-success"><svg lucideCheck></svg> Changes saved successfully.</div> }
+              <button class="button button-soft edit-response-button" type="button" (click)="editResponse()">Edit Response</button>
+            </div>
+          } @else {
+            <div class="agent-heading"><div class="agent-heading-icon"><svg lucideShieldCheck></svg></div><div><span class="section-kicker">AGENT WORKSPACE</span><h2>Manage ticket</h2></div></div>
+            <p class="agent-intro">Update the ticket status and save a clear response for the customer.</p>
+            <form [formGroup]="agentForm" (ngSubmit)="saveUpdate()" novalidate>
+              <label for="agent-status">Ticket status</label>
+              <select id="agent-status" formControlName="status">
+                @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
+              </select>
+              @if (autoStatusUpdating()) { <small class="field-hint">Updating this ticket to In Progress…</small> }
+              <label for="agent-resolution">Resolution note @if (agentForm.controls.status.value === 'Resolved') { <span>*</span> }</label>
+              <textarea id="agent-resolution" rows="5" formControlName="resolution_note" maxlength="5000" placeholder="Summarize what was done to resolve the issue..."></textarea>
+              <small class="field-hint">The note is saved only when you choose Save changes. Replies never replace this note.</small>
+              @if (agentForm.controls.status.value === 'Resolved' && resolutionNoteWordCount() < 2 && agentForm.controls.resolution_note.touched) {
+                <small class="field-error">A resolution note with at least two words is required.</small>
+              }
+              @if (saveError()) { <div class="save-error" role="alert">{{ saveError() }}</div> }
+              <div class="agent-form-actions">
+                <button class="button button-primary save-button" type="submit" [disabled]="saving() || autoStatusUpdating()">
+                  @if (saving()) { <svg class="spin" lucideLoaderCircle></svg> Saving... }
+                  @else { Save changes }
+                </button>
+                @if (current.resolution_note) { <button class="button button-soft" type="button" (click)="closeResponseEditor()" [disabled]="saving()">Cancel</button> }
+              </div>
+            </form>
+          }
         </section>
       } @else if (current.status === 'Open') {
         <section class="content-card support-note">

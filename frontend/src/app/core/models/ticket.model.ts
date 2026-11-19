@@ -19,6 +19,11 @@ export interface Ticket {
   agent_reply_count: number;
   last_reply_at: string | null;
   last_reply_by: 'user' | 'agent' | null;
+  is_reopened: boolean;
+  rating: number | null;
+  rating_note: string;
+  rating_created_at: string | null;
+  rating_seen_by_agent: boolean;
 }
 
 export interface TicketListResponse {
@@ -49,7 +54,6 @@ export interface UpdateTicketRequest {
 
 export type DemoRole = 'user' | 'agent';
 
-
 export interface TicketReply {
   sender_role: 'user' | 'agent';
   message: string;
@@ -59,4 +63,9 @@ export interface TicketReply {
 export interface CreateTicketReplyRequest {
   sender_role: 'user' | 'agent';
   message: string;
+}
+
+export interface TicketRatingRequest {
+  rating: number;
+  note: string;
 }

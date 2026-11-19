@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
   LucideArrowLeft,
   LucideCalendarDays,
@@ -18,7 +18,7 @@ import {
   LucideShieldCheck,
   LucideTag,
 } from '@lucide/angular';
-import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
+import { catchError, map, of, switchMap } from 'rxjs';
 import { TICKET_STATUSES, Ticket, TicketStatus, UpdateTicketRequest } from '../../core/models/ticket.model';
 import { DemoModeService } from '../../core/services/demo-mode.service';
 import { TicketService } from '../../core/services/ticket.service';
@@ -48,11 +48,9 @@ import { TicketService } from '../../core/services/ticket.service';
 })
 export class TicketDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly ticketService = inject(TicketService);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
-  private pendingAutoSave: string | null = null;
 
   readonly demoMode = inject(DemoModeService);
   readonly routeQuery = this.route.snapshot.queryParams;
@@ -64,9 +62,16 @@ export class TicketDetailPage implements OnInit {
   readonly loadError = signal('');
   readonly saveError = signal('');
   readonly saved = signal(false);
-  readonly autoSaveMessage = signal('');
+  readonly managementExpanded = signal(false);
+  readonly reopening = signal(false);
+  readonly reopenError = signal('');
   readonly replySending = signal(false);
   readonly replyError = signal('');
+  readonly ratingSaving = signal(false);
+  readonly ratingError = signal('');
+  readonly ratingSaved = signal(false);
+  readonly selectedRating = signal(0);
+
   readonly replyForm = this.formBuilder.nonNullable.group({
     message: ['', [Validators.required, Validators.maxLength(2000)]],
   });
@@ -76,13 +81,11 @@ export class TicketDetailPage implements OnInit {
     resolution_note: [''],
   });
 
-  ngOnInit(): void {
-    this.agentForm.controls.resolution_note.valueChanges.pipe(
-      debounceTime(850),
-      distinctUntilChanged(),
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe((note) => this.autoSaveResolutionNote(note));
+  readonly ratingForm = this.formBuilder.nonNullable.group({
+    note: ['', [Validators.maxLength(1000)]],
+  });
 
+  ngOnInit(): void {
     this.route.paramMap.pipe(
       map((params) => params.get('id') ?? ''),
       switchMap((id) => {
@@ -104,20 +107,38 @@ export class TicketDetailPage implements OnInit {
         return;
       }
 
-      this.loadError.set('');
       this.ticket.set(ticket);
       this.agentForm.patchValue({
         status: ticket.status,
         resolution_note: ticket.resolution_note ?? '',
       }, { emitEvent: false });
       this.agentForm.markAsPristine();
+      this.managementExpanded.set(this.demoMode.role() === 'agent' && !ticket.resolution_note);
       this.saved.set(false);
       this.saveError.set('');
-      this.autoSaveMessage.set('');
+      this.selectedRating.set(ticket.rating ?? 0);
+      this.ratingForm.patchValue({ note: ticket.rating_note ?? '' }, { emitEvent: false });
+      this.ratingError.set('');
+      this.ratingSaved.set(false);
+      this.reopenError.set('');
+      this.replyError.set('');
 
+      if (this.demoMode.role() === 'agent' && ticket.rating !== null && !ticket.rating_seen_by_agent) {
+        this.markRatingAsSeen(ticket);
+      }
       if (this.demoMode.role() === 'agent' && ticket.status === 'Open') {
         this.moveToInProgress(ticket);
       }
+    });
+  }
+
+  private markRatingAsSeen(current: Ticket): void {
+    this.ticketService.markRatingSeen(current.id).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (updated) => {
+        if (this.ticket()?.id === current.id) this.ticket.set(updated);
+      },
     });
   }
 
@@ -131,13 +152,10 @@ export class TicketDetailPage implements OnInit {
         this.ticket.set(updated);
         this.agentForm.patchValue({ status: updated.status }, { emitEvent: false });
         this.autoStatusUpdating.set(false);
-        this.autoSaveMessage.set('This ticket moved to In Progress automatically when you opened it.');
-        this.flushPendingAutoSave();
       },
       error: () => {
         this.autoStatusUpdating.set(false);
         this.saveError.set('The ticket opened, but its status could not be moved to In Progress. Please retry with Save changes.');
-        this.flushPendingAutoSave();
       },
     });
   }
@@ -150,12 +168,30 @@ export class TicketDetailPage implements OnInit {
     return Math.max(0, 5 - (this.ticket()?.agent_reply_count ?? 0));
   }
 
+  isMyTurn(): boolean {
+    const current = this.ticket();
+    return !!current && current.last_reply_by !== this.demoMode.role();
+  }
+
   canSendReply(): boolean {
     const current = this.ticket();
-    if (!current || this.replyForm.invalid || this.replySending()) return false;
-    return this.demoMode.role() === 'agent'
+    if (!current || current.status === 'Resolved' || this.replyForm.invalid || this.replySending()) return false;
+    const remaining = this.demoMode.role() === 'agent'
       ? current.agent_reply_count < 5
       : current.customer_reply_count < 5;
+    return remaining && this.isMyTurn();
+  }
+
+  replyWaitMessage(): string {
+    const current = this.ticket();
+    if (!current) return '';
+    const remaining = this.demoMode.role() === 'agent'
+      ? current.agent_reply_count
+      : current.customer_reply_count;
+    if (remaining >= 5) return 'This side has used all five replies for this ticket.';
+    return this.demoMode.role() === 'agent'
+      ? 'Your reply has been sent. Wait for the customer to respond before sending another message.'
+      : 'Your reply has been sent. Wait for the support team to respond before sending another message.';
   }
 
   sendReply(): void {
@@ -179,11 +215,84 @@ export class TicketDetailPage implements OnInit {
       },
       error: (error: HttpErrorResponse) => {
         this.replySending.set(false);
+        const detail = typeof error.error?.detail === 'string' ? error.error.detail : '';
         this.replyError.set(error.status === 409
-          ? 'You have reached the five-reply limit for this ticket.'
+          ? (detail || 'Please wait for the other side to reply before sending another message.')
           : 'Your reply could not be sent. Please check the connection and try again.');
       },
     });
+  }
+
+  reopenTicket(): void {
+    const current = this.ticket();
+    if (!current || current.status !== 'Resolved' || this.reopening()) return;
+    this.reopening.set(true);
+    this.reopenError.set('');
+    this.ticketService.reopenTicket(current.id).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (updated) => {
+        if (this.ticket()?.id !== current.id) return;
+        this.ticket.set(updated);
+        this.reopening.set(false);
+        this.selectedRating.set(0);
+        this.ratingForm.reset({ note: '' });
+        this.ratingSaved.set(false);
+        this.agentForm.patchValue({ status: updated.status }, { emitEvent: false });
+      },
+      error: (error: HttpErrorResponse) => {
+        this.reopening.set(false);
+        this.reopenError.set(error.status === 409
+          ? 'This ticket is no longer resolved. Refresh the page to see its latest status.'
+          : 'The ticket could not be reopened. Please try again.');
+      },
+    });
+  }
+
+  selectRating(rating: number): void {
+    this.selectedRating.set(rating);
+    this.ratingSaved.set(false);
+    this.ratingError.set('');
+  }
+
+  saveRating(): void {
+    const current = this.ticket();
+    const rating = this.selectedRating();
+    if (!current || current.status !== 'Resolved' || rating < 1 || rating > 5 || this.ratingSaving()) return;
+
+    this.ratingSaving.set(true);
+    this.ratingError.set('');
+    this.ticketService.saveRating(current.id, {
+      rating,
+      note: this.ratingForm.controls.note.value.trim(),
+    }).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: (updated) => {
+        if (this.ticket()?.id !== current.id) return;
+        this.ticket.set(updated);
+        this.ratingSaving.set(false);
+        this.ratingSaved.set(true);
+      },
+      error: () => {
+        this.ratingSaving.set(false);
+        this.ratingError.set('Your feedback could not be saved. Please try again.');
+      },
+    });
+  }
+
+  editResponse(): void {
+    this.managementExpanded.set(true);
+    this.saved.set(false);
+  }
+
+  closeResponseEditor(): void {
+    const current = this.ticket();
+    this.agentForm.patchValue({
+      status: current?.status ?? 'Open',
+      resolution_note: current?.resolution_note ?? '',
+    }, { emitEvent: false });
+    this.agentForm.markAsPristine();
+    this.managementExpanded.set(false);
+    this.saveError.set('');
   }
 
   private wordCount(value: string): number {
@@ -195,62 +304,9 @@ export class TicketDetailPage implements OnInit {
     return this.wordCount(this.agentForm.controls.resolution_note.value);
   }
 
-  private autoSaveResolutionNote(note: string): void {
-    const normalizedNote = note.trim();
-    if (this.wordCount(normalizedNote) < 2) {
-      this.pendingAutoSave = null;
-      this.autoSaveMessage.set('Add at least two words to save the resolution and mark this ticket as Resolved.');
-      return;
-    }
-
-    const current = this.ticket();
-    if (!current || this.demoMode.role() !== 'agent') return;
-
-    if (this.saving() || this.autoStatusUpdating()) {
-      this.pendingAutoSave = normalizedNote;
-      return;
-    }
-
-    if (current.resolution_note) return;
-    if (current.status === 'Resolved' && current.resolution_note === normalizedNote) return;
-
-    this.saveError.set('');
-    this.saving.set(true);
-    this.ticketService.updateTicket(current.id, {
-      status: 'Resolved',
-      resolution_note: normalizedNote,
-    }).pipe(
-      takeUntilDestroyed(this.destroyRef),
-    ).subscribe({
-      next: (updated) => {
-        if (this.ticket()?.id !== current.id) return;
-        this.ticket.set(updated);
-        this.agentForm.patchValue({ status: 'Resolved' }, { emitEvent: false });
-        this.saving.set(false);
-        this.saved.set(true);
-        this.autoSaveMessage.set(
-          current.status === 'Resolved'
-            ? 'Resolution note saved automatically.'
-            : 'Two or more words detected. The ticket is now Resolved and the note has been saved.',
-        );
-        this.flushPendingAutoSave();
-      },
-      error: () => {
-        this.saving.set(false);
-        this.saveError.set('Automatic resolution could not be saved. Check the connection and use Save changes to retry.');
-      },
-    });
-  }
-
-  private flushPendingAutoSave(): void {
-    const pending = this.pendingAutoSave;
-    this.pendingAutoSave = null;
-    if (pending) this.autoSaveResolutionNote(pending);
-  }
-
   saveUpdate(): void {
     const current = this.ticket();
-    if (!current || this.saving()) return;
+    if (!current || this.saving() || this.autoStatusUpdating()) return;
 
     const status = this.agentForm.controls.status.value;
     const resolutionNote = this.agentForm.controls.resolution_note.value.trim();
@@ -264,13 +320,16 @@ export class TicketDetailPage implements OnInit {
     }
 
     const payload: UpdateTicketRequest = { status };
-    if (resolutionNote && !current.resolution_note) payload.resolution_note = resolutionNote;
+    if (resolutionNote && resolutionNote !== (current.resolution_note ?? '')) {
+      payload.resolution_note = resolutionNote;
+    }
 
     this.saving.set(true);
     this.ticketService.updateTicket(current.id, payload).pipe(
       takeUntilDestroyed(this.destroyRef),
     ).subscribe({
       next: (updated) => {
+        if (this.ticket()?.id !== current.id) return;
         this.ticket.set(updated);
         this.agentForm.patchValue({
           status: updated.status,
@@ -279,8 +338,7 @@ export class TicketDetailPage implements OnInit {
         this.agentForm.markAsPristine();
         this.saving.set(false);
         this.saved.set(true);
-        void this.router.navigate(['/tickets'], { queryParams: this.route.snapshot.queryParams });
-        this.flushPendingAutoSave();
+        this.managementExpanded.set(false);
       },
       error: () => {
         this.saving.set(false);
@@ -298,6 +356,6 @@ export class TicketDetailPage implements OnInit {
   }
 
   shortId(id: string): string {
-    return `#${id.slice(-6).toUpperCase()}`;
+    return '#' + id.slice(-6).toUpperCase();
   }
 }

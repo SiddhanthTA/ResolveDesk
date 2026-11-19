@@ -8,6 +8,7 @@ import {
   Ticket,
   TicketFilters,
   TicketListResponse,
+  TicketRatingRequest,
   UpdateTicketRequest,
 } from '../models/ticket.model';
 
@@ -24,29 +25,53 @@ export class TicketService {
     if (filters.status) params = params.set('status', filters.status);
     if (filters.category) params = params.set('category', filters.category);
 
-    return this.http.get<TicketListResponse>(`${API_BASE_URL}/tickets/`, { params });
+    return this.http.get<TicketListResponse>(API_BASE_URL + '/tickets/', { params });
   }
 
   getTicket(id: string): Observable<Ticket> {
-    return this.http.get<Ticket>(`${API_BASE_URL}/tickets/${encodeURIComponent(id)}/`);
+    return this.http.get<Ticket>(API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/');
   }
 
   createTicket(payload: CreateTicketRequest): Observable<Ticket> {
-    return this.http.post<Ticket>(`${API_BASE_URL}/tickets/`, payload);
+    return this.http.post<Ticket>(API_BASE_URL + '/tickets/', payload);
   }
 
   updateTicket(id: string, payload: UpdateTicketRequest): Observable<Ticket> {
     return this.http.patch<Ticket>(
-      `${API_BASE_URL}/tickets/${encodeURIComponent(id)}/`,
+      API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/',
       payload,
     );
   }
 
   addReply(id: string, payload: CreateTicketReplyRequest): Observable<Ticket> {
-    return this.http.post<Ticket>(`${API_BASE_URL}/tickets/${encodeURIComponent(id)}/replies/`, payload);
+    return this.http.post<Ticket>(
+      API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/replies/',
+      payload,
+    );
+  }
+
+  reopenTicket(id: string): Observable<Ticket> {
+    return this.http.post<Ticket>(
+      API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/reopen/',
+      {},
+    );
+  }
+
+  saveRating(id: string, payload: TicketRatingRequest): Observable<Ticket> {
+    return this.http.post<Ticket>(
+      API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/rating/',
+      payload,
+    );
+  }
+
+  markRatingSeen(id: string): Observable<Ticket> {
+    return this.http.post<Ticket>(
+      API_BASE_URL + '/tickets/' + encodeURIComponent(id) + '/rating/seen/',
+      {},
+    );
   }
 
   getSimilarTickets(payload: SimilarTicketRequest): Observable<Ticket[]> {
-    return this.http.post<Ticket[]>(`${API_BASE_URL}/tickets/similar/`, payload);
+    return this.http.post<Ticket[]>(API_BASE_URL + '/tickets/similar/', payload);
   }
 }

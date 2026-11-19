@@ -1,35 +1,112 @@
 <div class="app-shell">
- <aside class="sidebar">
-  <a class="brand" routerLink="/dashboard" aria-label="ResolveDesk home"><span class="brand-mark">R</span><span class="brand-copy"><strong>resolve<span>desk</span></strong><small>SMART SUPPORT WORKSPACE</small></span></a>
-  <div class="nav-section-label">NAVIGATION</div>
-  <nav class="primary-nav" aria-label="Main navigation">
-   <a data-tour="overview" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}"><svg lucideLayoutDashboard></svg><span>Overview</span></a>
-   <a routerLink="/tickets" routerLinkActive="active"><svg lucideTicket></svg><span>{{demoMode.role()==='agent'?'Work queue':'My tickets'}}</span></a>
-   @if(demoMode.role()==='user'){<a data-tour="create-nav" routerLink="/tickets/new" routerLinkActive="active"><svg lucidePlus></svg><span>Create ticket</span></a>}
-  </nav>
-  <div class="sidebar-spacer"></div>
-  @if(demoMode.role()==='user'){
-   <button class="sidebar-help tour-launch" type="button" (click)="startTour()"><div class="help-icon">?</div><strong>New to ResolveDesk?</strong><p>Take a guided tour of the workspace and its key features.</p><span class="tour-link">Start the walkthrough <span>↗</span></span></button>
-  }
-  <div class="sidebar-footer"><div class="footer-avatar">{{demoMode.role()==='agent'?'SA':'EU'}}</div><div class="footer-user"><strong>{{demoMode.role()==='agent'?'Support Agent':'End User'}}</strong><span>{{demoMode.role()==='agent'?'Agent workspace':'Customer workspace'}}</span></div><span class="local-badge">DEMO</span></div>
- </aside>
- <main class="main-area">
-  <header class="topbar"><div class="topbar-context"><span class="eyebrow">RESOLVEDESK <span class="eyebrow-dot">/</span> {{demoMode.role()==='agent'?'AGENT CONSOLE':'CUSTOMER SPACE'}}</span><span class="topbar-caption">{{demoMode.role()==='agent'?'Triage clearly. Resolve thoughtfully.':'A clearer path from issue to answer.'}}</span></div>
-   <div class="topbar-actions"><div class="demo-switcher" aria-label="Demo role"><span class="demo-label">DEMO ROLE</span><button type="button" [class.selected]="demoMode.role()==='user'" (click)="switchRole('user')">End user</button><button type="button" [class.selected]="demoMode.role()==='agent'" (click)="switchRole('agent')">Agent</button></div><div class="topbar-avatar">{{demoMode.role()==='agent'?'SA':'EU'}}</div></div>
-  </header>
-  <section class="page-container"><router-outlet /></section>
-  <footer class="app-footer"><span>© 2026 ResolveDesk</span><span><i></i> Local demo environment</span></footer>
- </main>
+  <aside class="sidebar">
+    <a class="brand" routerLink="/dashboard" aria-label="ResolveDesk home">
+      <span class="brand-mark">R</span>
+      <span class="brand-copy"><strong>resolve<span>desk</span></strong><small>SMART SUPPORT WORKSPACE</small></span>
+    </a>
+
+    <div class="nav-section-label">NAVIGATION</div>
+    <nav class="primary-nav" aria-label="Main navigation">
+      <a data-tour="overview" routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+        <svg lucideLayoutDashboard></svg><span>Overview</span>
+      </a>
+      @if (demoMode.role() === 'agent') {
+        <a routerLink="/tickets" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <svg lucideTicket></svg><span>Work queue</span>
+        </a>
+        <a routerLink="/tickets/in-progress" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <svg lucideClock3></svg><span>In progress</span>
+        </a>
+        <a routerLink="/tickets/resolved" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+          <svg lucideCircleCheck></svg><span>Resolved tickets</span>
+        </a>
+      } @else {
+        <a routerLink="/tickets" routerLinkActive="active">
+          <svg lucideTicket></svg><span>My tickets</span>
+        </a>
+        <a data-tour="create-nav" routerLink="/tickets/new" routerLinkActive="active">
+          <svg lucidePlus></svg><span>Create ticket</span>
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-spacer"></div>
+    @if (demoMode.role() === 'user') {
+      <button class="sidebar-help tour-launch" type="button" (click)="startTour()">
+        <div class="help-icon">?</div>
+        <strong>New to ResolveDesk?</strong>
+        <p>Take a guided tour of the workspace and its key features.</p>
+        <span class="tour-link">Start the walkthrough <span>↗</span></span>
+      </button>
+    }
+    <div class="sidebar-footer">
+      <div class="footer-avatar">{{ demoMode.role() === 'agent' ? 'SA' : 'EU' }}</div>
+      <div class="footer-user">
+        <strong>{{ demoMode.role() === 'agent' ? 'Support Agent' : 'End User' }}</strong>
+        <span>{{ demoMode.role() === 'agent' ? 'Agent workspace' : 'Customer workspace' }}</span>
+      </div>
+      <span class="local-badge">DEMO</span>
+    </div>
+  </aside>
+
+  <main class="main-area">
+    <header class="topbar">
+      <div class="topbar-context">
+        <span class="eyebrow">RESOLVEDESK <span class="eyebrow-dot">/</span> {{ demoMode.role() === 'agent' ? 'AGENT CONSOLE' : 'CUSTOMER SPACE' }}</span>
+        <span class="topbar-caption">{{ demoMode.role() === 'agent' ? 'Triage clearly. Resolve thoughtfully.' : 'A clearer path from issue to answer.' }}</span>
+      </div>
+      <div class="topbar-actions">
+        <div class="demo-switcher" aria-label="Demo role">
+          <span class="demo-label">DEMO ROLE</span>
+          <button type="button" [class.selected]="demoMode.role() === 'user'" (click)="switchRole('user')">End user</button>
+          <button type="button" [class.selected]="demoMode.role() === 'agent'" (click)="switchRole('agent')">Agent</button>
+        </div>
+        <div class="topbar-avatar">{{ demoMode.role() === 'agent' ? 'SA' : 'EU' }}</div>
+      </div>
+    </header>
+
+    <section class="page-container"><router-outlet /></section>
+    <footer class="app-footer">
+      <span>© 2026 ResolveDesk</span>
+      <span><i></i> Local demo environment</span>
+    </footer>
+  </main>
 </div>
-@if(tourOpen()){
- <div class="tour-dimmer" aria-hidden="true"></div>
- <div class="tour-spotlight" [style.left.px]="spotlight().left" [style.top.px]="spotlight().top" [style.width.px]="spotlight().width" [style.height.px]="spotlight().height"></div>
- <section class="tour-popover" role="dialog" aria-modal="true" aria-labelledby="tour-title" [style.left.px]="tooltip().left" [style.top.px]="tooltip().top">
-  <div class="tour-topline"><span>RESOLVEDESK · GUIDED TOUR</span><button type="button" aria-label="Close tour" (click)="closeTour()">×</button></div>
-  <div class="tour-progress"><span [style.width.%]="((tourStep()+1)/tourSteps.length)*100"></span></div>
-  <div class="tour-step-count">0{{tourStep()+1}} <span>/ 0{{tourSteps.length}}</span></div>
-  <h2 id="tour-title">{{tourSteps[tourStep()].title}}</h2><p>{{tourSteps[tourStep()].description}}</p>
-  <div class="tour-target"><i></i>{{tourSteps[tourStep()].target}}</div>
-  <div class="tour-actions"><button type="button" class="tour-skip" (click)="closeTour()">Exit tour</button><button type="button" class="tour-next" (click)="nextTourStep()">{{tourStep()===tourSteps.length-1?'Finish tour':'Next feature →'}}</button></div>
- </section>
+
+@if (resolutionNotice(); as notice) {
+  <section class="resolution-notice" role="status" aria-live="polite" aria-labelledby="resolution-notice-title">
+    <div class="resolution-notice-top">
+      <span class="resolution-notice-icon"><svg lucideCircleCheck></svg></span>
+      <button class="resolution-notice-close" type="button" aria-label="Dismiss notification" (click)="dismissResolutionNotice()">×</button>
+    </div>
+    <span class="resolution-notice-kicker">SUPPORT UPDATE</span>
+    <h2 id="resolution-notice-title">{{ notice.total === 1 ? 'Your ticket was resolved' : 'Your tickets were resolved' }}</h2>
+    <p class="resolution-notice-copy">The support team completed these requests:</p>
+    <ul>
+      @for (ticket of notice.tickets; track ticket.id) {
+        <li>{{ ticket.title }}</li>
+      }
+    </ul>
+    @if (notice.total > notice.tickets.length) {
+      <p class="resolution-notice-more">And {{ notice.total - notice.tickets.length }} more ticket{{ notice.total - notice.tickets.length === 1 ? '' : 's' }} resolved.</p>
+    }
+    <a class="resolution-notice-link" routerLink="/tickets/resolved" (click)="dismissResolutionNotice()">View resolved tickets <span>→</span></a>
+  </section>
+}
+
+@if (tourOpen()) {
+  <div class="tour-dimmer" aria-hidden="true"></div>
+  <div class="tour-spotlight" [style.left.px]="spotlight().left" [style.top.px]="spotlight().top" [style.width.px]="spotlight().width" [style.height.px]="spotlight().height"></div>
+  <section class="tour-popover" role="dialog" aria-modal="true" aria-labelledby="tour-title" [style.left.px]="tooltip().left" [style.top.px]="tooltip().top">
+    <div class="tour-topline"><span>RESOLVEDESK · GUIDED TOUR</span><button type="button" aria-label="Close tour" (click)="closeTour()">×</button></div>
+    <div class="tour-progress"><span [style.width.%]="((tourStep() + 1) / tourSteps.length) * 100"></span></div>
+    <div class="tour-step-count">0{{ tourStep() + 1 }} <span>/ 0{{ tourSteps.length }}</span></div>
+    <h2 id="tour-title">{{ tourSteps[tourStep()].title }}</h2>
+    <p>{{ tourSteps[tourStep()].description }}</p>
+    <div class="tour-target"><i></i>{{ tourSteps[tourStep()].target }}</div>
+    <div class="tour-actions">
+      <button type="button" class="tour-skip" (click)="closeTour()">Exit tour</button>
+      <button type="button" class="tour-next" (click)="nextTourStep()">{{ tourStep() === tourSteps.length - 1 ? 'Finish tour' : 'Next feature →' }}</button>
+    </div>
+  </section>
 }

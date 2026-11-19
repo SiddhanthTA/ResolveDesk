@@ -1,4 +1,4 @@
-<a class="back-link" routerLink="/tickets" [queryParams]="routeQuery"><svg lucideArrowLeft></svg> Back to all tickets</a>
+<a class="back-link" routerLink="/tickets" [queryParams]="routeQuery"><svg lucideArrowLeft></svg> Back to tickets</a>
 
 @if (loading()) {
   <div class="detail-loading"><span></span><span></span><span></span></div>
@@ -53,20 +53,25 @@
       @if (demoMode.role() === 'agent') {
         <section class="content-card agent-card">
           <div class="agent-heading"><div class="agent-heading-icon"><svg lucideShieldCheck></svg></div><div><span class="section-kicker">AGENT WORKSPACE</span><h2>Manage ticket</h2></div></div>
-          <p class="agent-intro">Update the issue status and leave a useful note for the person who reported it.</p>
+          <p class="agent-intro">Opening an Open ticket moves it to In Progress automatically. Add a resolution note to complete the request.</p>
           <form [formGroup]="agentForm" (ngSubmit)="saveUpdate()" novalidate>
             <label for="agent-status">Ticket status</label>
             <select id="agent-status" formControlName="status">
               @for (status of statuses; track status) { <option [value]="status">{{ status }}</option> }
             </select>
+            @if (autoStatusUpdating()) {
+              <small class="field-hint">Updating this ticket to In Progress…</small>
+            }
             <label for="agent-resolution">Resolution note @if (agentForm.controls.status.value === 'Resolved') { <span>*</span> }</label>
             <textarea id="agent-resolution" rows="5" formControlName="resolution_note" maxlength="5000" placeholder="Summarize what was done to resolve the issue..."></textarea>
-            @if (agentForm.controls.status.value === 'Resolved' && !agentForm.controls.resolution_note.value.trim() && agentForm.controls.resolution_note.touched) {
-              <small class="field-error">A resolution note is required.</small>
+            <small class="field-hint">After at least two words, the note is saved automatically and the ticket becomes Resolved. You can keep editing the note; changes are saved after you pause typing.</small>
+            @if (agentForm.controls.status.value === 'Resolved' && agentForm.controls.resolution_note.value.trim().length === 0 && agentForm.controls.resolution_note.touched) {
+              <small class="field-error">A resolution note with at least two words is required.</small>
             }
+            @if (autoSaveMessage()) { <div class="auto-save-hint" role="status">{{ autoSaveMessage() }}</div> }
             @if (saveError()) { <div class="save-error" role="alert">{{ saveError() }}</div> }
             @if (saved()) { <div class="save-success"><svg lucideCheck></svg> Changes saved successfully.</div> }
-            <button class="button button-primary save-button" type="submit" [disabled]="saving()">
+            <button class="button button-primary save-button" type="submit" [disabled]="saving() || autoStatusUpdating()">
               @if (saving()) { <svg class="spin" lucideLoaderCircle></svg> Saving... }
               @else { Save changes }
             </button>

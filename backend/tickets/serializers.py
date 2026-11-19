@@ -79,6 +79,9 @@ class TicketResponseSerializer(serializers.Serializer):
     rating_note = serializers.CharField(allow_blank=True)
     rating_created_at = serializers.DateTimeField(allow_null=True)
     rating_seen_by_agent = serializers.BooleanField()
+    close_requested = serializers.BooleanField()
+    close_requested_at = serializers.DateTimeField(allow_null=True)
+    resolution_type = serializers.ChoiceField(choices=("agent", "force"), allow_null=True)
 
 
 class TicketListResponseSerializer(serializers.Serializer):

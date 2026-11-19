@@ -42,7 +42,7 @@
         </section>
       }
 
-      @if (demoMode.role() === 'user' && current.status === 'Resolved' && !current.is_reopened) {
+      @if (demoMode.role() === 'user' && current.status === 'Resolved') {
         <section class="content-card rating-card">
           <div class="content-card-heading">
             <span class="card-icon rating-icon">★</span>
@@ -70,6 +70,7 @@
           </form>
         </section>
 
+        @if (!current.is_reopened) {
         <section class="reopen-card">
           <div><strong>Still need help with this issue?</strong><p>Reopen the ticket to continue the conversation with the support team.</p></div>
           <button class="button button-primary" type="button" (click)="reopenTicket()" [disabled]="reopening()">
@@ -78,6 +79,7 @@
           </button>
           @if (reopenError()) { <small class="field-error" role="alert">{{ reopenError() }}</small> }
         </section>
+        }
       }
 
       @if (demoMode.role() === 'agent' || current.status !== 'Resolved' || current.conversation_unlocked) {

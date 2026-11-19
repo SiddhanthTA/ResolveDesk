@@ -42,7 +42,7 @@
         </section>
       }
 
-      @if (demoMode.role() === 'user' && current.status === 'Resolved') {
+      @if (demoMode.role() === 'user' && current.status === 'Resolved' && !current.is_reopened) {
         <section class="content-card rating-card">
           <div class="content-card-heading">
             <span class="card-icon rating-icon">★</span>
@@ -88,7 +88,10 @@
             <span class="reply-count">{{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} of 5 left</span>
           </div>
 
-          @if (current.replies.length) {
+          @if (current.replies.length && current.status === 'Resolved') {
+            <button class="button button-soft" type="button" (click)="toggleReplies()">{{ repliesExpanded() ? 'Hide replies' : 'Show replies (' + current.replies.length + ')' }}</button>
+          }
+          @if (current.replies.length && (current.status !== 'Resolved' || repliesExpanded())) {
             <div class="conversation-thread" aria-live="polite">
               @for (reply of current.replies; track $index; let last = $last) {
                 <article class="conversation-message" [class.customer-message]="reply.sender_role === 'user'" [class.agent-message]="reply.sender_role === 'agent'" [class.latest-message]="last">
@@ -101,7 +104,7 @@
                 </article>
               }
             </div>
-          } @else {
+          } @else if (!current.replies.length) {
             <p class="conversation-empty">No replies yet. Use this conversation to follow up with the support team.</p>
           }
 
@@ -123,6 +126,18 @@
           }
         </section>
       }
+
+      @if (demoMode.role() === 'user' && current.status !== 'Resolved') {
+        <section class="reopen-card">
+          <div><strong>Is your issue resolved?</strong><p>Send a closure request to the support agent. They will review it before closing the ticket.</p></div>
+          @if (current.close_requested) {
+            <span class="reply-turn-note">Close request sent. Waiting for the support agent.</span>
+          } @else {
+            <button class="button button-primary" type="button" (click)="requestClose()" [disabled]="closeRequestSending()">@if (closeRequestSending()) { Sending... } @else { Request ticket closure }</button>
+          }
+          @if (closeRequestError()) { <small class="field-error" role="alert">{{ closeRequestError() }}</small> }
+        </section>
+      }
     </div>
 
     <aside class="detail-aside">
@@ -142,6 +157,19 @@
             <div class="agent-rating-stars"><strong>{{ current.rating }} / 5</strong><span>{{ '★'.repeat(current.rating) }}</span></div>
             @if (current.rating_note) { <p class="agent-rating-note">{{ current.rating_note }}</p> }
             @if (!current.rating_seen_by_agent) { <span class="new-rating-label">NEW RATING RECEIVED</span> }
+          </section>
+        }
+        @if (current.status !== 'Resolved') {
+          <section class="content-card agent-card">
+            <span class="section-kicker">RESOLUTION ACTIONS</span>
+            @if (current.close_requested) {
+              <p class="agent-intro">The customer has requested that this ticket be closed.</p>
+              <button class="button button-primary" type="button" (click)="resolveTicket(false)" [disabled]="resolutionActionSending()">@if (resolutionActionSending()) { Resolving... } @else { Resolve ticket }</button>
+            } @else {
+              <p class="agent-intro">You can close this ticket without a customer request if needed.</p>
+            }
+            <button class="button button-soft" type="button" (click)="resolveTicket(true)" [disabled]="resolutionActionSending()">Force Resolve Ticket</button>
+            @if (resolutionActionError()) { <small class="field-error" role="alert">{{ resolutionActionError() }}</small> }
           </section>
         }
         <section class="content-card agent-card">

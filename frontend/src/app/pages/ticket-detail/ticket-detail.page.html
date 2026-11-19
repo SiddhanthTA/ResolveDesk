@@ -65,7 +65,7 @@
             <label for="agent-resolution">Resolution note @if (agentForm.controls.status.value === 'Resolved') { <span>*</span> }</label>
             <textarea id="agent-resolution" rows="5" formControlName="resolution_note" maxlength="5000" placeholder="Summarize what was done to resolve the issue..."></textarea>
             <small class="field-hint">After at least two words, the note is saved automatically and the ticket becomes Resolved. You can keep editing the note; changes are saved after you pause typing.</small>
-            @if (agentForm.controls.status.value === 'Resolved' && agentForm.controls.resolution_note.value.trim().length === 0 && agentForm.controls.resolution_note.touched) {
+            @if (agentForm.controls.status.value === 'Resolved' && resolutionNoteWordCount() < 2 && agentForm.controls.resolution_note.touched) {
               <small class="field-error">A resolution note with at least two words is required.</small>
             }
             @if (autoSaveMessage()) { <div class="auto-save-hint" role="status">{{ autoSaveMessage() }}</div> }

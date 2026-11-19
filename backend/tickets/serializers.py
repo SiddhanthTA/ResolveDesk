@@ -74,6 +74,7 @@ class TicketResponseSerializer(serializers.Serializer):
     last_reply_by = serializers.ChoiceField(choices=("user", "agent"), allow_null=True)
     next_reply_by = serializers.ChoiceField(choices=("user", "agent"), allow_null=True)
     is_reopened = serializers.BooleanField()
+    conversation_unlocked = serializers.BooleanField()
     rating = serializers.IntegerField(allow_null=True, min_value=1, max_value=5)
     rating_note = serializers.CharField(allow_blank=True)
     rating_created_at = serializers.DateTimeField(allow_null=True)

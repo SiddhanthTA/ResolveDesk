@@ -21,6 +21,7 @@ def serialize_ticket(ticket):
     ticket.setdefault("last_reply_by", None)
     ticket.setdefault("next_reply_by", None)
     ticket.setdefault("is_reopened", False)
+    ticket.setdefault("conversation_unlocked", False)
     ticket.setdefault("rating", None)
     ticket.setdefault("rating_note", "")
     ticket.setdefault("rating_created_at", None)
@@ -189,6 +190,7 @@ def reopen_ticket(ticket_id):
         {"$set": {
             "status": "Open",
             "is_reopened": True,
+            "conversation_unlocked": True,
             "next_reply_by": "user",
             "rating": None,
             "rating_note": "",

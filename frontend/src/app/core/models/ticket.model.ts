@@ -21,6 +21,7 @@ export interface Ticket {
   last_reply_by: 'user' | 'agent' | null;
   next_reply_by: 'user' | 'agent' | null;
   is_reopened: boolean;
+  conversation_unlocked: boolean;
   rating: number | null;
   rating_note: string;
   rating_created_at: string | null;

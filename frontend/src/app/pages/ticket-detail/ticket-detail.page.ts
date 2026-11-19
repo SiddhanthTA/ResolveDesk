@@ -113,7 +113,7 @@ export class TicketDetailPage implements OnInit {
         resolution_note: ticket.resolution_note ?? '',
       }, { emitEvent: false });
       this.agentForm.markAsPristine();
-      this.managementExpanded.set(this.demoMode.role() === 'agent' && !ticket.resolution_note);
+      this.managementExpanded.set(this.demoMode.role() === 'agent' && (!ticket.resolution_note || ticket.is_reopened));
       this.saved.set(false);
       this.saveError.set('');
       this.selectedRating.set(ticket.rating ?? 0);

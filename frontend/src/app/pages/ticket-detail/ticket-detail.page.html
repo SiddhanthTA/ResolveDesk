@@ -80,7 +80,7 @@
         </section>
       }
 
-      @if (demoMode.role() === 'agent' || current.status !== 'Resolved' || current.is_reopened) {
+      @if (demoMode.role() === 'agent' || current.status !== 'Resolved' || current.conversation_unlocked) {
         <section class="content-card conversation-card">
           <div class="content-card-heading">
             <span class="card-icon conversation-icon"><svg lucideMessageSquare></svg></span>

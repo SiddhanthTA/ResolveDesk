@@ -45,7 +45,7 @@
           <svg class="filter-chevron" lucideChevronDown></svg>
         </button>
         @if (statusMenuOpen()) {
-          <div class="filter-options" role="group" aria-label="Ticket status options" (click)="$event.stopPropagation()">
+          <div class="filter-options" role="group" aria-label="Ticket status options">
             <button type="button" class="filter-option" [class.selected]="!statusFilter()" [attr.aria-pressed]="!statusFilter()" (click)="selectStatus('')">
               <span>All statuses</span>
               @if (!statusFilter()) { <svg lucideCheck></svg> }
@@ -74,7 +74,7 @@
           <svg class="filter-chevron" lucideChevronDown></svg>
         </button>
         @if (categoryMenuOpen()) {
-          <div class="filter-options" role="group" aria-label="Ticket category options" (click)="$event.stopPropagation()">
+          <div class="filter-options" role="group" aria-label="Ticket category options">
             <button type="button" class="filter-option" [class.selected]="!categoryFilter()" [attr.aria-pressed]="!categoryFilter()" (click)="selectCategory('')">
               <span>All categories</span>
               @if (!categoryFilter()) { <svg lucideCheck></svg> }

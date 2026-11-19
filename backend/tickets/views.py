@@ -376,3 +376,46 @@ class TicketRatingSeenView(APIView):
             return Response(ticket)
         except Exception:
             return Response({"detail": "Unable to update the rating status right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+
+class TicketCloseRequestView(APIView):
+    @extend_schema(summary="Request ticket closure", request=None, responses={200: TicketResponseSerializer, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT})
+    def post(self, request, ticket_id):
+        try:
+            ticket, result = ticket_repository.request_ticket_close(ticket_id)
+            if result == "not_found":
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result == "resolved":
+                return Response({"detail": "This ticket is already resolved."}, status=status.HTTP_409_CONFLICT)
+            return Response(ticket)
+        except Exception:
+            return Response({"detail": "Unable to submit the close request right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class TicketResolveView(APIView):
+    @extend_schema(summary="Resolve a customer-requested ticket", request=None, responses={200: TicketResponseSerializer, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT})
+    def post(self, request, ticket_id):
+        try:
+            ticket, result = ticket_repository.resolve_ticket(ticket_id, force=False)
+            if result == "not_found":
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result != "ok":
+                return Response({"detail": "The customer has not requested closure or the ticket is already resolved."}, status=status.HTTP_409_CONFLICT)
+            return Response(ticket)
+        except Exception:
+            return Response({"detail": "Unable to resolve the ticket right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+class TicketForceResolveView(APIView):
+    @extend_schema(summary="Force resolve a ticket", request=None, responses={200: TicketResponseSerializer, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT})
+    def post(self, request, ticket_id):
+        try:
+            ticket, result = ticket_repository.resolve_ticket(ticket_id, force=True)
+            if result == "not_found":
+                return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
+            if result != "ok":
+                return Response({"detail": "This ticket is already resolved."}, status=status.HTTP_409_CONFLICT)
+            return Response(ticket)
+        except Exception:
+            return Response({"detail": "Unable to force resolve the ticket right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

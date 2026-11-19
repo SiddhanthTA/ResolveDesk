@@ -50,6 +50,8 @@ export class App {
 
   readonly resolutionNotice = signal<TicketNotice | null>(null);
   readonly replyNotice = signal<TicketNotice | null>(null);
+  readonly closeRequestNotice = signal<TicketNotice | null>(null);
+  readonly forceResolutionNotice = signal<TicketNotice | null>(null);
   readonly tourOpen = signal(false);
   readonly tourStep = signal(0);
   readonly spotlight = signal({ left: 0, top: 0, width: 0, height: 0 });
@@ -101,9 +103,12 @@ export class App {
       this.agentSessionStartedAt = Date.now();
       this.resolutionNotice.set(null);
       this.replyNotice.set(null);
+      this.closeRequestNotice.set(null);
+      this.forceResolutionNotice.set(null);
     }
 
     this.demoMode.setRole(role);
+    if (role === 'agent') this.loadCloseRequestNotices();
     this.closeTour();
     void this.router.navigate(['/dashboard']);
 
@@ -120,7 +125,7 @@ export class App {
         if (this.demoMode.role() !== 'user') return;
 
         const newlyResolved = response.results
-          .filter((ticket) => ticket.status === 'Resolved' && Date.parse(ticket.updated_at) >= sessionStartedAt)
+          .filter((ticket) => ticket.status === 'Resolved' && ticket.resolution_type !== 'force' && Date.parse(ticket.updated_at) >= sessionStartedAt)
           .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
 
         const newAgentReplies = response.results
@@ -137,6 +142,8 @@ export class App {
           tickets: newAgentReplies.slice(0, 3),
           total: newAgentReplies.length,
         } : null);
+        const forceResolved = response.results.filter((ticket) => ticket.status === 'Resolved' && ticket.resolution_type === 'force' && Date.parse(ticket.updated_at) >= sessionStartedAt);
+        this.forceResolutionNotice.set(forceResolved.length ? { tickets: forceResolved.slice(0, 3), total: forceResolved.length } : null);
       },
     });
   }
@@ -147,6 +154,20 @@ export class App {
 
   dismissReplyNotice(): void {
     this.replyNotice.set(null);
+  }
+
+  dismissCloseRequestNotice(): void { this.closeRequestNotice.set(null); }
+  dismissForceResolutionNotice(): void { this.forceResolutionNotice.set(null); }
+
+  private loadCloseRequestNotices(): void {
+    this.ticketService.getTickets().subscribe({
+      next: (response) => {
+        if (this.demoMode.role() !== 'agent') return;
+        const requested = response.results.filter((ticket) => ticket.status !== 'Resolved' && ticket.close_requested)
+          .sort((a, b) => Date.parse(b.close_requested_at ?? '') - Date.parse(a.close_requested_at ?? ''));
+        this.closeRequestNotice.set(requested.length ? { tickets: requested.slice(0, 3), total: requested.length } : null);
+      },
+    });
   }
 
   startTour(): void {

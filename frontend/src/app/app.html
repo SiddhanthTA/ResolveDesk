@@ -133,3 +133,24 @@
     </div>
   </section>
 }
+
+
+@if (closeRequestNotice(); as notice) {
+  <section class="resolution-notice reply-notice" role="status" aria-live="polite">
+    <div class="resolution-notice-top"><span class="resolution-notice-icon"><svg lucideMessageSquare></svg></span><button class="resolution-notice-close" type="button" aria-label="Dismiss notification" (click)="dismissCloseRequestNotice()">×</button></div>
+    <span class="resolution-notice-kicker">CUSTOMER REQUEST</span>
+    <h2>{{ notice.total === 1 ? 'Ticket closure requested' : 'Ticket closures requested' }}</h2>
+    <p class="resolution-notice-copy">Review the customer's request and resolve the ticket if appropriate:</p>
+    <ul>@for (ticket of notice.tickets; track ticket.id) { <li><a [routerLink]="['/tickets', ticket.id]" (click)="dismissCloseRequestNotice()">{{ ticket.title }}</a></li> }</ul>
+  </section>
+}
+
+@if (forceResolutionNotice(); as notice) {
+  <section class="resolution-notice" role="status" aria-live="polite">
+    <div class="resolution-notice-top"><span class="resolution-notice-icon"><svg lucideCircleCheck></svg></span><button class="resolution-notice-close" type="button" aria-label="Dismiss notification" (click)="dismissForceResolutionNotice()">×</button></div>
+    <span class="resolution-notice-kicker">SUPPORT UPDATE</span>
+    <h2>{{ notice.total === 1 ? 'Ticket force closed by Agent' : 'Tickets force closed by Agent' }}</h2>
+    <p class="resolution-notice-copy">The support agent force resolved these tickets:</p>
+    <ul>@for (ticket of notice.tickets; track ticket.id) { <li><a [routerLink]="['/tickets', ticket.id]" (click)="dismissForceResolutionNotice()">{{ ticket.title }}</a></li> }</ul>
+  </section>
+}

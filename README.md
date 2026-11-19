@@ -18,6 +18,7 @@ ResolveDesk is a smart support desk prototype. People can report software issues
 - Show active Open and In Progress tickets first in both workspace overviews.
 - Show in-app notices for newly resolved tickets and new agent replies, with direct links to each ticket.
 - Highlight the latest reply in the conversation and ticket list.
+- Provide a guided onboarding tour with step-by-step highlights, controlled scrolling during the tour, and a return to the main dashboard when the tour ends or is closed.
 - Suggest up to three similar resolved tickets while a user is entering a new issue.
 - Allow ticket submission even when suggestions are unavailable or no close match is found.
 

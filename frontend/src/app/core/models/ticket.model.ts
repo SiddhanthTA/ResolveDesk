@@ -26,6 +26,9 @@ export interface Ticket {
   rating_note: string;
   rating_created_at: string | null;
   rating_seen_by_agent: boolean;
+  close_requested: boolean;
+  close_requested_at: string | null;
+  resolution_type: 'agent' | 'force' | null;
 }
 
 export interface TicketListResponse {

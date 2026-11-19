@@ -224,7 +224,7 @@ def request_ticket_close(ticket_id):
         return None, "not_found"
     now = datetime.now(timezone.utc)
     updated = tickets_collection.find_one_and_update(
-        {"_id": object_id, "status": {"$ne": "Resolved"}, "close_requested": {"$ne": True}},
+        {"_id": object_id, "status": {"$ne": "Resolved"}, "is_reopened": True, "close_requested": {"$ne": True}},
         {"$set": {"close_requested": True, "close_requested_at": now, "updated_at": now}},
         return_document=ReturnDocument.AFTER,
     )
@@ -235,6 +235,8 @@ def request_ticket_close(ticket_id):
         return None, "not_found"
     if existing.get("status") == "Resolved":
         return None, "resolved"
+    if not existing.get("is_reopened"):
+        return None, "not_reopened"
     return serialize_ticket(existing), "already_requested"
 
 

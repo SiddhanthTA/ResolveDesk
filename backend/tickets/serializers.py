@@ -85,3 +85,10 @@ class SimilarTicketRequestSerializer(serializers.Serializer):
 
 class SimilarTicketResponseSerializer(TicketResponseSerializer):
     similarity_score = serializers.FloatField()
+
+
+class DeleteAllTicketsConfirmationSerializer(serializers.Serializer):
+    confirmation = serializers.ChoiceField(
+        choices=(("DELETE ALL TICKETS", "DELETE ALL TICKETS"),),
+        help_text='Type exactly "DELETE ALL TICKETS" to confirm this destructive action.',
+    )

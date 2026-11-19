@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.http import Http404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,9 +15,11 @@ from .serializers import (
     TicketUpdateSerializer,
     SimilarTicketRequestSerializer,
     SimilarTicketResponseSerializer,
+    DeleteAllTicketsConfirmationSerializer,
 )
 
 from .services.similarity_service import find_similar_resolved_tickets
+from .demo_data import DEMO_BATCH_KEY, build_resolved_demo_tickets
 
 
 class HealthCheckView(APIView):
@@ -196,5 +200,80 @@ class SimilarTicketSuggestionsView(APIView):
         except Exception:
             return Response(
                 {"detail": "Unable to generate similar-ticket suggestions right now."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+
+class DevelopmentOnlyAPIView(APIView):
+    """Hide destructive/demo utilities outside local development."""
+
+    def initial(self, request, *args, **kwargs):
+        if not settings.DEBUG:
+            raise Http404
+        return super().initial(request, *args, **kwargs)
+
+
+class SeedResolvedDemoTicketsView(DevelopmentOnlyAPIView):
+    @extend_schema(
+        summary="Seed 25 realistic resolved demo tickets",
+        description=(
+            "Development-only utility. Inserts 25 resolved examples across Account, "
+            "Technical, Billing and General. Re-running replaces only this endpoint's "
+            "previous demo batch and leaves other tickets untouched. Available only "
+            "when Django DEBUG=True."
+        ),
+        request=None,
+        responses={201: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
+    )
+    def post(self, request):
+        try:
+            inserted = ticket_repository.replace_demo_seed_tickets(
+                build_resolved_demo_tickets(),
+                DEMO_BATCH_KEY,
+            )
+            return Response({
+                "message": "Resolved demo tickets are ready.",
+                "inserted": inserted,
+                "categories": {
+                    "Account": 7,
+                    "Technical": 6,
+                    "Billing": 6,
+                    "General": 6,
+                },
+                "note": "Only the previous ResolveDesk demo batch was replaced. Other tickets were preserved.",
+            }, status=status.HTTP_201_CREATED)
+        except Exception:
+            return Response(
+                {"detail": "Unable to seed resolved demo tickets. Check the MongoDB connection."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+
+class DeleteAllTicketsView(DevelopmentOnlyAPIView):
+    @extend_schema(
+        summary="DELETE ALL tickets (development only)",
+        description=(
+            "Destructive development-only utility. Deletes every ticket in the MongoDB "
+            "tickets collection, including user-created and seeded tickets. The request "
+            "must include confirmation='DELETE ALL TICKETS'. Available only when "
+            "Django DEBUG=True."
+        ),
+        request=DeleteAllTicketsConfirmationSerializer,
+        responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 503: OpenApiTypes.OBJECT},
+    )
+    def post(self, request):
+        serializer = DeleteAllTicketsConfirmationSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            deleted = ticket_repository.delete_all_tickets()
+            return Response({
+                "message": "Ticket collection cleared.",
+                "deleted": deleted,
+            })
+        except Exception:
+            return Response(
+                {"detail": "Unable to delete tickets. Check the MongoDB connection."},
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )

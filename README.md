@@ -121,7 +121,7 @@ For a fresh database, open a second backend terminal with the virtual environmen
 python seed_tickets.py
 ```
 
-The seed script inserts four resolved examples and one open ticket. It skips the operation if the collection already contains documents, so existing test data is not overwritten.
+The seed script inserts four resolved examples and one open ticket. It skips the operation if the collection already contains documents, so existing test data is not overwritten. For richer AI similarity testing, use the development-only Swagger seed endpoint described below.
 
 ### API documentation
 
@@ -158,6 +158,19 @@ Django's `corsheaders` middleware is enabled. The backend explicitly allows both
 - `http://127.0.0.1:4200`
 
 If the browser reports a CORS error, confirm that the frontend is running on one of these exact origins and that Django has been restarted after settings changes.
+
+### Development-only Swagger utilities
+
+When Django runs with `DEBUG=True` (the local development configuration), Swagger exposes two POST-only utilities:
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/dev/seed-resolved-tickets/` | Insert 25 realistic resolved examples across all four categories. Re-running replaces only this demo batch and preserves other tickets. |
+| POST | `/api/dev/delete-all-tickets/` | Delete every ticket document in MongoDB. Requires the exact confirmation text `DELETE ALL TICKETS`. |
+
+Open `http://127.0.0.1:8000/api/docs/` and expand the **Development utilities** operations. Run the seed operation first when preparing AI tests. Use the delete operation only when you intentionally want an empty ticket collection.
+
+**Safety note:** Swagger is a convenient interface, not authentication. These endpoints are ordinary HTTP API routes and can also be called by other HTTP clients while development mode is enabled. They return 404 when Django `DEBUG=False`, and neither endpoint is used by the Angular frontend. Do not deploy with `DEBUG=True`.
 
 ## AI similarity behaviour
 

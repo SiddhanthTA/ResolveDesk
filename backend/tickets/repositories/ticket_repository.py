@@ -12,6 +12,7 @@ def serialize_ticket(ticket):
         return None
 
     ticket["id"] = str(ticket.pop("_id"))
+    ticket.pop("_demo_seed_batch", None)
     for field in ("created_at", "updated_at"):
         value = ticket.get(field)
         if value is not None:
@@ -80,3 +81,20 @@ def list_resolved_tickets():
     """Return only resolved tickets for similarity comparisons."""
     documents = tickets_collection.find({"status": "Resolved"}).sort("created_at", -1)
     return [serialize_ticket(document) for document in documents]
+
+
+def replace_demo_seed_tickets(tickets, batch_key):
+    """Replace only this named demo batch, leaving real/user-created tickets untouched."""
+    tickets_collection.delete_many({"_demo_seed_batch": batch_key})
+    if not tickets:
+        return 0
+
+    documents = [dict(ticket, _demo_seed_batch=batch_key) for ticket in tickets]
+    result = tickets_collection.insert_many(documents)
+    return len(result.inserted_ids)
+
+
+def delete_all_tickets():
+    """Delete every ticket document. Intended only for local development tools."""
+    result = tickets_collection.delete_many({})
+    return result.deleted_count

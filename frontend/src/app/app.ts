@@ -47,6 +47,8 @@ export class App {
   private readonly router = inject(Router);
   private readonly ticketService = inject(TicketService);
   private agentSessionStartedAt: number | null = null;
+  private previousHtmlOverflow = '';
+  private previousBodyOverflow = '';
 
   readonly resolutionNotice = signal<TicketNotice | null>(null);
   readonly replyNotice = signal<TicketNotice | null>(null);
@@ -92,6 +94,13 @@ export class App {
       path: '/tickets',
       selector: '[data-tour="ticket-row"]',
       target: 'Ticket list',
+    },
+    {
+      title: 'Enjoy using ResolveDesk!',
+      description: 'You have reached the end of the guided tour. Your dashboard is always here when you need a clear view of your support activity.',
+      path: '/dashboard',
+      selector: '[data-tour="overview"]',
+      target: 'Your dashboard',
     },
   ];
 
@@ -172,13 +181,21 @@ export class App {
 
   startTour(): void {
     if (this.demoMode.role() !== 'user') return;
+    this.previousHtmlOverflow = document.documentElement.style.overflow;
+    this.previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
     this.tourStep.set(0);
     this.tourOpen.set(true);
     void this.showTourStep(0);
   }
 
   closeTour(): void {
+    if (!this.tourOpen()) return;
     this.tourOpen.set(false);
+    document.documentElement.style.overflow = this.previousHtmlOverflow;
+    document.body.style.overflow = this.previousBodyOverflow;
+    void this.router.navigateByUrl('/dashboard').then(() => window.scrollTo(0, 0));
   }
 
   nextTourStep(): void {

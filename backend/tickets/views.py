@@ -390,6 +390,8 @@ class TicketCloseRequestView(APIView):
                 return Response({"detail": "Ticket not found."}, status=status.HTTP_404_NOT_FOUND)
             if result == "resolved":
                 return Response({"detail": "This ticket is already resolved."}, status=status.HTTP_409_CONFLICT)
+            if result == "not_reopened":
+                return Response({"detail": "Only reopened tickets can request closure."}, status=status.HTTP_409_CONFLICT)
             return Response(ticket)
         except Exception:
             return Response({"detail": "Unable to submit the close request right now."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)

@@ -27,6 +27,64 @@
         <div class="issue-footer"><span>{{ current.description.length }} characters</span><span>Last updated {{ current.updated_at | date:'MMM d, y · h:mm a' }}</span></div>
       </section>
 
+      <section class="content-card conversation-card">
+        <div class="content-card-heading">
+          <span class="card-icon conversation-icon"><svg lucideMessageSquare></svg></span>
+          <div>
+            <span class="section-kicker">TICKET CONVERSATION</span>
+            <h2>Replies</h2>
+          </div>
+          <span class="reply-count">
+            {{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} of 5 left
+          </span>
+        </div>
+
+        @if (current.replies.length) {
+          <div class="conversation-thread" aria-live="polite">
+            @for (reply of current.replies; track $index; let last = $last) {
+              <article
+                class="conversation-message"
+                [class.customer-message]="reply.sender_role === 'user'"
+                [class.agent-message]="reply.sender_role === 'agent'"
+                [class.latest-message]="last"
+              >
+                <div class="message-meta">
+                  <strong>{{ reply.sender_role === 'agent' ? 'Support team' : 'You / Customer' }}</strong>
+                  <span>{{ reply.created_at | date:'MMM d, y · h:mm a' }}</span>
+                  @if (last) { <span class="latest-reply-badge">LATEST REPLY</span> }
+                </div>
+                <p>{{ reply.message }}</p>
+              </article>
+            }
+          </div>
+        } @else {
+          <p class="conversation-empty">No replies yet. Use this conversation to follow up with the support team.</p>
+        }
+
+        @if ((demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining()) > 0) {
+          <form class="reply-form" [formGroup]="replyForm" (ngSubmit)="sendReply()">
+            <label for="ticket-reply">{{ demoMode.role() === 'agent' ? 'Reply to customer' : 'Send a reply' }}</label>
+            <textarea
+              id="ticket-reply"
+              rows="3"
+              maxlength="2000"
+              formControlName="message"
+              [placeholder]="demoMode.role() === 'agent' ? 'Write an update for the customer...' : 'Add more information or ask a follow-up question...'"
+            ></textarea>
+            @if (replyError()) { <small class="field-error" role="alert">{{ replyError() }}</small> }
+            <div class="reply-form-footer">
+              <span>{{ demoMode.role() === 'agent' ? agentRepliesRemaining() : customerRepliesRemaining() }} replies remaining</span>
+              <button class="button button-primary" type="submit" [disabled]="!canSendReply()">
+                @if (replySending()) { <svg class="spin" lucideLoaderCircle></svg> Sending... }
+                @else { <svg lucideSend></svg> Send reply }
+              </button>
+            </div>
+          </form>
+        } @else {
+          <p class="reply-limit-note">You've used all five replies available for this ticket.</p>
+        }
+      </section>
+
       @if (current.resolution_note) {
         <section class="content-card resolution-card">
           <div class="content-card-heading"><span class="card-icon resolution-icon"><svg lucideShieldCheck></svg></span><div><span class="section-kicker">SUPPORT RESPONSE</span><h2>Resolution note</h2></div><span class="resolved-label"><i></i> {{ current.status === 'Resolved' ? 'RESOLVED' : 'PREVIOUS RESOLUTION' }}</span></div>

@@ -124,7 +124,7 @@ export class App {
           .sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at));
 
         const newAgentReplies = response.results
-          .filter((ticket) => ticket.last_reply_by === 'agent' && !!ticket.last_reply_at
+          .filter((ticket) => ticket.conversation_unlocked && ticket.last_reply_by === 'agent' && !!ticket.last_reply_at
             && Date.parse(ticket.last_reply_at) >= sessionStartedAt)
           .sort((a, b) => Date.parse(b.last_reply_at ?? '') - Date.parse(a.last_reply_at ?? ''));
 

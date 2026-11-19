@@ -108,7 +108,7 @@
     <p class="resolution-notice-copy">The support team has responded:</p>
     <ul>
       @for (ticket of notice.tickets; track ticket.id) {
-        <li><a [routerLink]="['/tickets', ticket.id]" (click)="dismissReplyNotice()">{{ ticket.is_reopened ? 'Re-Opened Ticket - ' : '' }}{{ ticket.title }}</a></li>
+        <li><a [routerLink]="['/tickets', ticket.id]" (click)="dismissReplyNotice()">{{ ticket.conversation_unlocked ? 'Re-Opened Ticket - ' : '' }}{{ ticket.title }}</a></li>
       }
     </ul>
     @if (notice.total > notice.tickets.length) {
